@@ -182,12 +182,16 @@ export default function Send() {
     try {
       const atomicAmount = SultanWallet.parseSLTN(amount);
       
+      // Fetch current nonce from blockchain
+      const currentNonce = await sultanAPI.getNonce(currentAccount.address);
+      
       // Sign the transaction
       const txData = {
         from: currentAccount.address,
         to: recipient,
         amount: atomicAmount,
         memo,
+        nonce: currentNonce,
         timestamp: Date.now(),
       };
 

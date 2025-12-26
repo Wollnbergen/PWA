@@ -156,12 +156,16 @@ export default function BecomeValidator() {
     try {
       const atomicAmount = SultanWallet.parseSLTN(amount);
       
+      // Fetch current nonce from blockchain
+      const currentNonce = await sultanAPI.getNonce(currentAccount.address);
+      
       const txData = {
         type: 'fund_validator' as const,
         from: currentAccount.address,
         to: validatorAddress,
         amount: atomicAmount,
         moniker: moniker.trim() || 'Sultan Validator',
+        nonce: currentNonce,
         timestamp: Date.now(),
       };
 
@@ -172,6 +176,7 @@ export default function BecomeValidator() {
         to: validatorAddress,
         amount: atomicAmount,
         memo: `validator:${moniker.trim() || 'Sultan Validator'}`,
+        nonce: currentNonce,
         timestamp: Date.now(),
         signature,
         publicKey: currentAccount.publicKey,

@@ -451,6 +451,14 @@ function mapVoteOption(option: string): VoteOption {
 }
 
 /**
+ * Get nonce for an address
+ */
+export async function getNonce(address: string): Promise<number> {
+  const balance = await getBalance(address);
+  return balance.nonce;
+}
+
+/**
  * Unified API object for screens
  */
 export const sultanAPI = {
@@ -459,12 +467,14 @@ export const sultanAPI = {
   getValidators,
   getTransactions,
   getNetworkStatus,
+  getNonce,
   
   broadcastTransaction: async (tx: {
     from: string;
     to: string;
     amount: string;
     memo?: string;
+    nonce: number;
     timestamp: number;
     signature: string;
     publicKey: string;
@@ -475,7 +485,7 @@ export const sultanAPI = {
         to: tx.to,
         amount: tx.amount,
         memo: tx.memo,
-        nonce: 0, // Will be set by node
+        nonce: tx.nonce,
         timestamp: tx.timestamp,
       },
       signature: tx.signature,
