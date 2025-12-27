@@ -479,7 +479,7 @@ export const sultanAPI = {
     signature: string;
     publicKey: string;
   }): Promise<{ hash: string }> => {
-    return rpc<{ hash: string }>('broadcast_tx', {
+    return restApi<{ hash: string }>('/tx', 'POST', {
       tx: {
         from: tx.from,
         to: tx.to,
