@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+// useNavigate removed - using window.location for fresh balance
 import { useWallet } from '../hooks/useWallet';
 import { useTheme } from '../hooks/useTheme';
 import { useBalance } from '../hooks/useBalance';
@@ -52,7 +52,7 @@ const CheckCircleIcon = () => (
 type Step = 'form' | 'confirm' | 'pin' | 'pending' | 'success';
 
 export default function Send() {
-  const navigate = useNavigate();
+  // navigate removed - using window.location for fresh balance
   const { wallet, currentAccount } = useWallet();
   const { theme, setTheme } = useTheme();
   const { data: balanceData } = useBalance(currentAccount?.address);
@@ -237,6 +237,10 @@ export default function Send() {
   useEffect(() => {
     if (step !== 'pending' || !originalRecipientBalance) return;
 
+    // Minimum time to show pending screen for good UX
+    const minPendingTime = 4000;
+    const startTime = Date.now();
+
     let cancelled = false;
     let attempts = 0;
     const maxAttempts = 30; // 60 seconds max (2s per poll)
@@ -255,9 +259,12 @@ export default function Send() {
         // Check if recipient balance increased by expected amount
         if (newBigInt >= expectedBigInt) {
           setConfirmationStatus('Transaction confirmed!');
+          // Ensure minimum pending time for UX
+          const elapsed = Date.now() - startTime;
+          const remainingDelay = Math.max(500, minPendingTime - elapsed);
           setTimeout(() => {
             if (!cancelled) setStep('success');
-          }, 500);
+          }, remainingDelay);
           return;
         }
       } catch {
@@ -360,7 +367,7 @@ export default function Send() {
 
           <button 
             className="btn btn-primary mt-lg"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => { window.location.href = '/dashboard'; }}
           >
             Done
           </button>
@@ -495,7 +502,7 @@ export default function Send() {
   return (
     <div className="send-screen">
       <header className="screen-header">
-        <button className="btn-back" onClick={() => navigate('/dashboard')}>
+        <button className="btn-back" onClick={() => { window.location.href = '/dashboard'; }}>
           <BackIcon />
         </button>
         <h2>Send SLTN</h2>
