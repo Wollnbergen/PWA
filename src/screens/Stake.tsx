@@ -185,11 +185,12 @@ export default function Stake() {
 
       const signature = await wallet.signTransaction(txData, currentAccount.index);
       
-      await sultanAPI.claimRewards({
-        delegatorAddress: currentAccount.address,
-        signature,
-        publicKey: currentAccount.publicKey,
-      });
+        await sultanAPI.claimRewards({
+          delegatorAddress: currentAccount.address,
+          validatorAddress: stakingData?.validator || selectedValidator?.address || 'sultanval6newyork',
+          signature,
+          publicKey: currentAccount.publicKey,
+        });
 
       setSuccess('Rewards claimed successfully!');
       refetchStaking();

@@ -179,19 +179,25 @@ export async function getBalance(address: string): Promise<AccountBalance> {
  */
 export async function getStakingInfo(address: string): Promise<StakingInfo> {
   try {
-    const result = await rpc<{
-      staked: string;
-      rewards: string;
-      validator?: string;
-      apy: number;
-    }>('staking_info', { address });
-
+    // Use REST API - GET /staking/delegations/:address
+    const delegations = await restApi<Array<{
+      delegator_address: string;
+      validator_address: string;
+      amount: number;
+      rewards_accumulated: number;
+    }>>(`/staking/delegations/${address}`);
+    
+    // Sum up all delegations
+    const totalStaked = delegations.reduce((sum, d) => sum + d.amount, 0);
+    const totalRewards = delegations.reduce((sum, d) => sum + d.rewards_accumulated, 0);
+    const validator = delegations.length > 0 ? delegations[0].validator_address : undefined;
+    
     return {
       address,
-      staked: result.staked,
-      pendingRewards: result.rewards,
-      validator: result.validator,
-      stakingAPY: result.apy,
+      staked: totalStaked.toString(),
+      pendingRewards: totalRewards.toString(),
+      validator,
+      stakingAPY: 13.33, // Default APY
     };
   } catch {
     return {
@@ -208,15 +214,26 @@ export async function getStakingInfo(address: string): Promise<StakingInfo> {
  */
 export async function getValidators(): Promise<Validator[]> {
   try {
-    const result = await rpc<{ validators: Array<{ address: string; moniker: string; stake: string; commission: number; uptime: number; status: string }> }>('validators_list', {});
-    return (result.validators || []).map(v => ({
-      address: v.address,
-      name: v.moniker,
-      moniker: v.moniker,
-      totalStaked: v.stake,
-      commission: v.commission,
-      uptime: v.uptime,
-      status: v.status as 'active' | 'inactive' | 'jailed',
+    // Use REST API - /staking/validators returns array of validators
+    const result = await restApi<Array<{
+      validator_address: string;
+      self_stake: number;
+      delegated_stake: number;
+      total_stake: number;
+      commission_rate: number;
+      jailed: boolean;
+      blocks_signed: number;
+      blocks_missed: number;
+    }>>('/staking/validators');
+    
+    return result.map(v => ({
+      address: v.validator_address,
+      name: v.validator_address, // Use address as name since node does not provide moniker
+      moniker: v.validator_address,
+      totalStaked: v.total_stake.toString(),
+      commission: v.commission_rate,
+      uptime: v.blocks_signed > 0 ? (v.blocks_signed / (v.blocks_signed + v.blocks_missed)) * 100 : 100,
+      status: v.jailed ? 'jailed' as const : 'active' as const,
     }));
   } catch {
     return [];
@@ -386,6 +403,7 @@ interface UnstakeRequest {
 }
 
 interface ClaimRewardsRequest {
+  validatorAddress: string;
   delegatorAddress: string;
   signature: string;
   publicKey: string;
@@ -494,10 +512,13 @@ export const sultanAPI = {
   },
 
   stake: async (req: StakeRequest): Promise<{ hash: string }> => {
-    return rpc<{ hash: string }>('stake_tx', {
-      delegator: req.delegatorAddress,
-      validator: req.validatorAddress,
-      amount: req.amount,
+    // Use REST API - POST /staking/delegate
+    return restApi<{ hash: string }>('/staking/delegate', 'POST', {
+      tx: {
+        from: req.delegatorAddress,
+        to: req.validatorAddress,
+        amount: req.amount,
+      },
       signature: req.signature,
       public_key: req.publicKey,
     });
@@ -512,11 +533,12 @@ export const sultanAPI = {
     });
   },
 
-  claimRewards: async (req: ClaimRewardsRequest): Promise<{ hash: string }> => {
-    return rpc<{ hash: string }>('claim_rewards_tx', {
-      delegator: req.delegatorAddress,
-      signature: req.signature,
-      public_key: req.publicKey,
+  claimRewards: async (req: ClaimRewardsRequest): Promise<{ rewards_withdrawn: string; status: string }> => {
+    // Use REST API - POST /staking/withdraw_rewards
+    return restApi<{ rewards_withdrawn: string; status: string }>('/staking/withdraw_rewards', 'POST', {
+      address: req.delegatorAddress,
+      validator_address: req.validatorAddress,
+      is_validator: false,
     });
   },
 
