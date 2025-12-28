@@ -1,0 +1,139 @@
+Based on your codebase, here are the complete instructions you can give to another agent to copy the floating lines background effect:
+
+Instructions: Add Animated Floating Lines Background
+
+Add this complete CSS code to your stylesheet:
+
+/* Floating Vertical Lines Background */
+.floating-lines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+.floating-line {
+    position: absolute;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        var(--line-color-1) 20%,
+        var(--line-color-2) 50%,
+        var(--line-color-1) 80%,
+        transparent 100%
+    );
+    animation: float 20s ease-in-out infinite;
+    opacity: 0.9;
+}
+.floating-line:nth-child(1) {
+    left: 10%;
+    animation: float 18s ease-in-out infinite, linePulse1 6.4s ease-in-out infinite;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 255, 255, 0.6);
+    --line-color-2: rgba(0, 255, 255, 0.8);
+}
+.floating-line:nth-child(2) {
+    left: 35%;
+    animation: float 22s ease-in-out infinite, linePulse2 5.6s ease-in-out infinite;
+    animation-delay: -5s, -1.2s;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 191, 255, 0.6);
+    --line-color-2: rgba(0, 191, 255, 0.8);
+}
+.floating-line:nth-child(3) {
+    left: 60%;
+    animation: float 20s ease-in-out infinite, linePulse3 7.0s ease-in-out infinite;
+    animation-delay: -10s, -2.8s;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 255, 255, 0.6);
+    --line-color-2: rgba(0, 255, 255, 0.8);
+}
+.floating-line:nth-child(4) {
+    left: 25%;
+    animation: float 24s ease-in-out infinite, linePulse4 6.0s ease-in-out infinite;
+    animation-delay: -15s, -0.5s;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 191, 255, 0.6);
+    --line-color-2: rgba(0, 191, 255, 0.8);
+}
+.floating-line:nth-child(5) {
+    left: 50%;
+    animation: float 19s ease-in-out infinite, linePulse5 5.0s ease-in-out infinite;
+    animation-delay: -7s, -3.5s;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 255, 255, 0.6);
+    --line-color-2: rgba(0, 255, 255, 0.8);
+}
+.floating-line:nth-child(6) {
+    left: 85%;
+    animation: float 21s ease-in-out infinite, linePulse6 7.6s ease-in-out infinite;
+    animation-delay: -3s, -1.8s;
+    animation-play-state: running;
+    --line-color-1: rgba(0, 191, 255, 0.6);
+    --line-color-2: rgba(0, 191, 255, 0.8);
+}
+@keyframes float {
+    0%, 100% {
+        transform: translateY(-5%) scaleY(1);
+    }
+    50% {
+        transform: translateY(5%) scaleY(1.05);
+    }
+}
+@keyframes linePulse1 {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 0.9; }
+}
+@keyframes linePulse2 {
+    0%, 100% { opacity: 0.25; }
+    60% { opacity: 0.95; }
+}
+@keyframes linePulse3 {
+    0%, 100% { opacity: 0.15; }
+    45% { opacity: 0.85; }
+}
+@keyframes linePulse4 {
+    0%, 100% { opacity: 0.2; }
+    55% { opacity: 0.9; }
+}
+@keyframes linePulse5 {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+@keyframes linePulse6 {
+    0%, 100% { opacity: 0.2; }
+    65% { opacity: 0.85; }
+}
+/* Hide one line on mobile */
+@media (max-width: 768px) {
+    .floating-line:nth-child(5) {
+        display: none;
+    }
+    .floating-line:nth-child(1) { left: 5% !important; }
+    .floating-line:nth-child(2) { left: 22% !important; }
+    .floating-line:nth-child(3) { left: 42% !important; }
+    .floating-line:nth-child(4) { left: 68% !important; }
+    .floating-line:nth-child(6) { left: 92% !important; }
+}
+Then add this HTML structure right after your opening <body> tag:
+
+<div class="floating-lines">
+    <div class="floating-line"></div>
+    <div class="floating-line"></div>
+    <div class="floating-line"></div>
+    <div class="floating-line"></div>
+    <div class="floating-line"></div>
+    <div class="floating-line"></div>
+</div>
+Customization options:
+
+Change the colors by modifying --line-color-1 and --line-color-2 in each .floating-line:nth-child() selector
+Adjust positioning by changing the left percentages
+Modify animation speed by changing the duration values (e.g., 18s, 22s)
+Adjust opacity values in the @keyframes linePulse animations
+Note: The effect uses 6 vertical lines with alternating cyan/turquoise colors that float up and down with pulsing opacity animations.
