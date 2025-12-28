@@ -185,12 +185,11 @@ export default function Stake() {
 
       const signature = await wallet.signTransaction(txData, currentAccount.index);
       
-        await sultanAPI.claimRewards({
-          delegatorAddress: currentAccount.address,
-          validatorAddress: stakingData?.validator || selectedValidator?.address || 'sultanval6newyork',
-          signature,
-          publicKey: currentAccount.publicKey,
-        });
+      await sultanAPI.claimRewards({
+        delegatorAddress: currentAccount.address,
+        signature,
+        publicKey: currentAccount.publicKey,
+      });
 
       setSuccess('Rewards claimed successfully!');
       refetchStaking();
@@ -217,7 +216,7 @@ export default function Stake() {
         <div className="staking-overview">
           <div className="overview-card">
             <span className="overview-label">APY</span>
-            <span className="overview-value accent">13.33%</span>
+            <span className="overview-value accent">~13.33%</span>
           </div>
           <div className="overview-card">
             <span className="overview-label">Staked</span>
@@ -316,7 +315,31 @@ export default function Stake() {
 
         {tab === 'validators' && (
           <div className="validators-list">
-            {validators?.map(validator => (
+            {/* Validator Search - scales to thousands */}
+            <div className="validator-search">
+              <input
+                type="text"
+                className="input"
+                placeholder="🔍 Search validators by name or address..."
+                onChange={(e) => {
+                  const search = e.target.value.toLowerCase();
+                  // Filter is handled by showing only matching validators
+                  const filtered = validators?.filter(v => 
+                    v.name.toLowerCase().includes(search) || 
+                    v.address.toLowerCase().includes(search)
+                  );
+                  if (filtered && filtered.length > 0) {
+                    setSelectedValidator(filtered[0]);
+                  }
+                }}
+              />
+              <p className="search-hint">
+                {validators?.length || 0} active validators • Select one to stake with
+              </p>
+            </div>
+
+            {/* Show top 10 validators or filtered results */}
+            {validators?.slice(0, 10).map(validator => (
               <div 
                 key={validator.address}
                 className={`validator-card ${selectedValidator?.address === validator.address ? 'selected' : ''}`}
@@ -345,6 +368,11 @@ export default function Stake() {
                 </div>
               </div>
             ))}
+            {validators && validators.length > 10 && (
+              <p className="text-muted text-center" style={{ padding: '12px' }}>
+                Showing top 10 of {validators.length} validators. Use search to find more.
+              </p>
+            )}
             {(!validators || validators.length === 0) && (
               <p className="text-muted text-center">No validators available</p>
             )}

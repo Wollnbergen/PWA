@@ -99,8 +99,8 @@ export default function Governance() {
   const [proposalDescription, setProposalDescription] = useState('');
   const [proposalType, setProposalType] = useState<ProposalType>('TextProposal');
   const [depositAmount, setDepositAmount] = useState(MIN_DEPOSIT.toString());
-  const [telegramUrl, setTelegramUrl] = useState('https://t.me/SultanChain/');
-  const [discordUrl, setDiscordUrl] = useState('');
+  const [discordUrl, setDiscordUrl] = useState('https://discord.com/channels/1375878827460395142/1453111965428875537');
+  const [telegramUrl, setTelegramUrl] = useState('');
 
   const votingPower = SultanWallet.formatSLTN(stakingData?.staked || '0');
   const availableBalance = Number(SultanWallet.formatSLTN(balanceData?.available || '0'));
@@ -193,18 +193,18 @@ export default function Governance() {
       return;
     }
     // At least one discussion link is required
-    if (!telegramUrl.trim() && !discordUrl.trim()) {
-      setError('At least one discussion link (Telegram or Discord) is required');
-      return;
-    }
-    // Validate Telegram URL if provided
-    if (telegramUrl.trim() && !telegramUrl.startsWith('https://t.me/')) {
-      setError('Telegram URL must start with https://t.me/');
+    if (!discordUrl.trim() && !telegramUrl.trim()) {
+      setError('A Discord discussion link is required. Post in the Proposals channel first.');
       return;
     }
     // Validate Discord URL if provided
     if (discordUrl.trim() && !discordUrl.startsWith('https://discord')) {
       setError('Discord URL must start with https://discord');
+      return;
+    }
+    // Validate Telegram URL if provided
+    if (telegramUrl.trim() && !telegramUrl.startsWith('https://t.me/')) {
+      setError('Telegram URL must start with https://t.me/');
       return;
     }
     const deposit = Number(depositAmount);
@@ -255,8 +255,8 @@ export default function Governance() {
       setProposalDescription('');
       setProposalType('TextProposal');
       setDepositAmount(MIN_DEPOSIT.toString());
-      setTelegramUrl('https://t.me/SultanChain/');
-      setDiscordUrl('');
+      setDiscordUrl('https://discord.com/channels/1375878827460395142/1453111965428875537');
+      setTelegramUrl('');
       
       // Reload proposals and go back to list
       await loadProposals();
@@ -381,28 +381,28 @@ export default function Governance() {
               </p>
               
               <div className="form-group">
-                <label htmlFor="telegram">Telegram Discussion URL</label>
+                <label htmlFor="discord">Discord Discussion URL</label>
+                <input
+                  id="discord"
+                  type="url"
+                  value={discordUrl}
+                  onChange={(e) => setDiscordUrl(e.target.value)}
+                  placeholder="https://discord.com/channels/..."
+                  disabled={isSubmitting}
+                />
+                <span className="field-hint">
+                  Post your proposal in the <a href="https://discord.com/channels/1375878827460395142/1453111965428875537" target="_blank" rel="noopener noreferrer">Sultan Proposals channel</a>
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="telegram">Telegram Discussion URL (optional)</label>
                 <input
                   id="telegram"
                   type="url"
                   value={telegramUrl}
                   onChange={(e) => setTelegramUrl(e.target.value)}
                   placeholder="https://t.me/SultanChain/..."
-                  disabled={isSubmitting}
-                />
-                <span className="field-hint">
-                  Post your proposal in the <a href="https://t.me/SultanChain" target="_blank" rel="noopener noreferrer">Sultan community</a>
-                </span>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="discord">Discord Discussion URL (optional)</label>
-                <input
-                  id="discord"
-                  type="url"
-                  value={discordUrl}
-                  onChange={(e) => setDiscordUrl(e.target.value)}
-                  placeholder="https://discord.gg/..."
                   disabled={isSubmitting}
                 />
               </div>

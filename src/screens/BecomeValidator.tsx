@@ -112,6 +112,7 @@ export default function BecomeValidator() {
   const [success, setSuccess] = useState('');
   const [serverReady, setServerReady] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showBeginnerGuide, setShowBeginnerGuide] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -230,8 +231,39 @@ export default function BecomeValidator() {
                 <ValidatorIcon />
               </div>
               <h2>Become a Sultan Validator</h2>
-              <p className="hero-subtitle">Secure the network and earn 13.33% APY</p>
+              <p className="hero-subtitle">Secure the network and earn ~13.33% APY (variable)</p>
             </div>
+
+            {/* Beginner-friendly explainer */}
+            <div className="beginner-guide-toggle" onClick={() => setShowBeginnerGuide(!showBeginnerGuide)}>
+              <span>🆕 New to this? Start here!</span>
+              <span className="toggle-arrow">{showBeginnerGuide ? '▲' : '▼'}</span>
+            </div>
+
+            {showBeginnerGuide && (
+              <div className="beginner-guide">
+                <div className="guide-item">
+                  <strong>What is a validator?</strong>
+                  <p>A validator is a computer that helps keep the Sultan network running. Think of it like being a helpful neighbor who verifies that transactions are legitimate. In return for helping, you earn rewards (~13.33% per year).</p>
+                </div>
+                <div className="guide-item">
+                  <strong>What is SSH?</strong>
+                  <p>SSH (Secure Shell) is a way to securely control a remote computer using text commands. It's like a secure phone call where you type instructions to the server.</p>
+                </div>
+                <div className="guide-item">
+                  <strong>What is a VPS/Server?</strong>
+                  <p>A VPS (Virtual Private Server) is a computer you rent in a data center. It runs 24/7 without you needing to keep your home computer on. Companies like DigitalOcean make this easy—you click a few buttons, and you have your own server!</p>
+                </div>
+                <div className="guide-item">
+                  <strong>Do I need to be a programmer?</strong>
+                  <p>No! You just need to copy-paste a few commands. If you can follow a recipe, you can do this. The whole setup takes about 5 minutes once you have your server.</p>
+                </div>
+                <div className="guide-item community">
+                  <strong>Still nervous?</strong>
+                  <p>Join our <a href="https://discord.gg/sultan" target="_blank" rel="noopener noreferrer">Discord</a> or <a href="https://t.me/sultanchain" target="_blank" rel="noopener noreferrer">Telegram</a>! Community members are happy to help beginners step-by-step.</p>
+                </div>
+              </div>
+            )}
 
             <div className="security-badge">
               <ShieldIcon />
@@ -244,7 +276,7 @@ export default function BecomeValidator() {
             <div className="benefits-card">
               <h3>Validator Benefits</h3>
               <ul className="benefits-list">
-                <li><CheckIcon /> <span>13.33% Base APY on staked tokens</span></li>
+                <li><CheckIcon /> <span>~13.33% APY (variable based on network stake)</span></li>
                 <li><CheckIcon /> <span>Commission on delegator rewards</span></li>
                 <li><CheckIcon /> <span>Zero gas fees on all transactions</span></li>
                 <li><CheckIcon /> <span>Help secure the Sultan network</span></li>
@@ -281,22 +313,22 @@ export default function BecomeValidator() {
               <div className="step-preview-item">
                 <div className="step-preview-num">2</div>
                 <div>
-                  <strong>Generate Keys on Server</strong>
-                  <p>Run <code>sultan-node init</code> — keys never leave server</p>
+                  <strong>Start Validator Node</strong>
+                  <p>Run <code>sultan-node --validator</code> with your stake</p>
                 </div>
               </div>
               <div className="step-preview-item">
                 <div className="step-preview-num">3</div>
                 <div>
-                  <strong>Copy Validator Address</strong>
-                  <p>Your server shows its validator address (sltn1...)</p>
+                  <strong>Connect to Network</strong>
+                  <p>Your node syncs with bootstrap peers automatically</p>
                 </div>
               </div>
               <div className="step-preview-item">
                 <div className="step-preview-num">4</div>
                 <div>
-                  <strong>Fund From This Wallet</strong>
-                  <p>Send 10,000 SLTN to activate the validator</p>
+                  <strong>Earn Rewards</strong>
+                  <p>Start earning ~13.33% APY on your stake</p>
                 </div>
               </div>
             </div>
@@ -352,26 +384,37 @@ export default function BecomeValidator() {
             <div className="info-card">
               <h4>SSH into your server and run:</h4>
               <div className="command-block">
-                <pre>{`# Download and initialize Sultan node
-curl -L https://github.com/Wollnbergen/DOCS/releases/download/v1.1.0/sultan-node -o sultan-node
+                <pre>{`# Download Sultan node
+curl -L https://github.com/Wollnbergen/DOCS/releases/latest/download/sultan-node -o sultan-node
 chmod +x sultan-node
-./sultan-node init --moniker "MyValidator"`}</pre>
-                <button className="copy-btn" onClick={() => handleCopyCommand(`curl -L https://github.com/Wollnbergen/DOCS/releases/download/v1.1.0/sultan-node -o sultan-node && chmod +x sultan-node && ./sultan-node init --moniker "MyValidator"`)}>
+
+# Open firewall ports
+sudo ufw allow 26656/tcp && sudo ufw allow 26657/tcp
+
+# Start validator (replace MyValidator with your name)
+./sultan-node --validator \\
+  --name "MyValidator" \\
+  --validator-address "MyValidator" \\
+  --validator-stake 10000 \\
+  --enable-sharding --shard-count 16 \\
+  --enable-p2p \\
+  --bootstrap-peers /ip4/206.189.224.142/tcp/26656`}</pre>
+                <button className="copy-btn" onClick={() => handleCopyCommand(`curl -L https://github.com/Wollnbergen/DOCS/releases/latest/download/sultan-node -o sultan-node && chmod +x sultan-node && sudo ufw allow 26656/tcp && sudo ufw allow 26657/tcp`)}>
                   {copied ? <CheckIcon /> : <CopyIcon />}
                 </button>
               </div>
             </div>
 
             <div className="tip-box">
-              <strong>💡 What happens:</strong> This generates a new Ed25519 keypair directly on your server. 
-              The private key is stored at <code>~/.sultan/validator_key.json</code> and never leaves your server.
+              <strong>💡 What happens:</strong> Your node connects to the Sultan network via the bootstrap peer,
+              syncs with other validators, and starts participating in consensus to earn rewards.
             </div>
 
             <div className="checkbox-item" onClick={() => setServerReady(!serverReady)}>
               <div className={`checkbox ${serverReady ? 'checked' : ''}`}>
                 {serverReady && <CheckIcon />}
               </div>
-              <span>I ran the init command and see my validator address</span>
+              <span>My validator is running and connected to peers</span>
             </div>
 
             <div className="button-row">
@@ -380,11 +423,16 @@ chmod +x sultan-node
               </button>
               <button 
                 className="btn btn-primary" 
-                onClick={() => setStep('address')}
+                onClick={() => navigate('/stake')}
                 disabled={!serverReady}
               >
-                Continue →
+                Done → View Staking
               </button>
+            </div>
+
+            <div className="info-card" style={{ marginTop: '20px' }}>
+              <h4>📚 Full Documentation</h4>
+              <p>For systemd service setup, monitoring, and troubleshooting, see the <a href="https://github.com/Wollnbergen/0xv7/blob/main/VALIDATOR_GUIDE.md" target="_blank" rel="noopener noreferrer">Validator Guide</a>.</p>
             </div>
           </>
         )}
