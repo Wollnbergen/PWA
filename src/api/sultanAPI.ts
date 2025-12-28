@@ -181,61 +181,103 @@ export async function getStakingInfo(address: string): Promise<StakingInfo> {
 export async function getValidators(): Promise<Validator[]> {
   try {
     // Use REST API: GET /staking/validators
+    // Node returns: validator_address, total_stake, commission_rate, jailed
     const result = await restApi<Array<{ 
-      address: string; 
-      moniker: string; 
-      stake: number; 
-      commission: number; 
-      uptime: number; 
-      status: string;
+      validator_address: string; 
+      self_stake: number;
+      delegated_stake: number;
+      total_stake: number; 
+      commission_rate: number; 
+      jailed: boolean;
+      blocks_signed: number;
+      blocks_missed: number;
     }>>('/staking/validators');
     
-    // If empty, return mock validators for the known network validators
-    // Stakes are in base units (1 SLTN = 1,000,000 base units)
+    // If empty array, return empty (no fallback to mocks)
     if (!result || result.length === 0) {
-      return [
-        { address: 'sultan1v9x7k...e3f2', name: 'Polaris Stake', moniker: 'Polaris Stake', totalStaked: '45000000000', commission: 0.05, uptime: 99.8, status: 'active' },
-        { address: 'sultan1m4hp2...7a91', name: 'Titanium Node', moniker: 'Titanium Node', totalStaked: '32000000000', commission: 0.05, uptime: 99.9, status: 'active' },
-        { address: 'sultan1q8wnf...c4b6', name: 'CryptoForge', moniker: 'CryptoForge', totalStaked: '28500000000', commission: 0.04, uptime: 99.7, status: 'active' },
-        { address: 'sultan1k3jem...5d28', name: 'BlockSentinel', moniker: 'BlockSentinel', totalStaked: '19000000000', commission: 0.05, uptime: 99.9, status: 'active' },
-        { address: 'sultan1z6rvt...8f4e', name: 'Nexus Labs', moniker: 'Nexus Labs', totalStaked: '15500000000', commission: 0.03, uptime: 99.6, status: 'active' },
-      ];
+      return [];
     }
     
-    return result.map(v => ({
-      address: v.address,
-      name: v.moniker,
-      moniker: v.moniker,
-      totalStaked: v.stake.toString(),
-      commission: v.commission,
-      uptime: v.uptime,
-      status: v.status as 'active' | 'inactive' | 'jailed',
-    }));
-  } catch {
-    // Fallback to known validators
-    // Stakes are in base units (1 SLTN = 1,000,000 base units)
-    return [
-      { address: 'sultan1v9x7k...e3f2', name: 'Polaris Stake', moniker: 'Polaris Stake', totalStaked: '45000000000', commission: 0.05, uptime: 99.8, status: 'active' },
-      { address: 'sultan1m4hp2...7a91', name: 'Titanium Node', moniker: 'Titanium Node', totalStaked: '32000000000', commission: 0.05, uptime: 99.9, status: 'active' },
-      { address: 'sultan1q8wnf...c4b6', name: 'CryptoForge', moniker: 'CryptoForge', totalStaked: '28500000000', commission: 0.04, uptime: 99.7, status: 'active' },
-      { address: 'sultan1k3jem...5d28', name: 'BlockSentinel', moniker: 'BlockSentinel', totalStaked: '19000000000', commission: 0.05, uptime: 99.9, status: 'active' },
-      { address: 'sultan1z6rvt...8f4e', name: 'Nexus Labs', moniker: 'Nexus Labs', totalStaked: '15500000000', commission: 0.03, uptime: 99.6, status: 'active' },
-    ];
+    // Map real validator data to Validator interface
+    // Use friendly names based on validator address
+    const validatorNames: Record<string, string> = {
+      'sultanval1london': 'London Validator',
+      'sultanval2singapore': 'Singapore Validator', 
+      'sultanval3amsterdam': 'Amsterdam Validator',
+      'sultanval6newyork': 'New York Validator',
+    };
+    
+    return result.map(v => {
+      const name = validatorNames[v.validator_address] || v.validator_address;
+      // Calculate uptime from blocks signed/missed
+      const totalBlocks = v.blocks_signed + v.blocks_missed;
+      const uptime = totalBlocks > 0 ? (v.blocks_signed / totalBlocks) * 100 : 99.9;
+      
+      return {
+        address: v.validator_address,
+        name: name,
+        moniker: name,
+        totalStaked: v.total_stake.toString(),
+        commission: v.commission_rate,
+        uptime: Math.round(uptime * 10) / 10,
+        status: v.jailed ? 'jailed' as const : 'active' as const,
+      };
+    });
+  } catch (error) {
+    console.error('Failed to fetch validators:', error);
+    // Return empty array on error - no fake validators
+    return [];
   }
 }
 
 /**
  * Get transaction history for an address
- * Note: Node doesn't have tx history endpoint yet, returns empty for now
+ * Fetches from the node's /transactions/{address} endpoint
  */
 export async function getTransactions(
-  _address: string,
-  _limit = 20,
+  address: string,
+  limit = 20,
   _offset = 0
 ): Promise<Transaction[]> {
-  // Transaction history not yet implemented on node
-  // Future: GET /transactions/{address}
-  return [];
+  try {
+    const result = await restApi<{
+      address: string;
+      transactions: Array<{
+        hash: string;
+        from: string;
+        to: string;
+        amount: number;
+        memo?: string;
+        nonce: number;
+        timestamp: number;
+        block_height: number;
+        status: string;
+      }>;
+      count: number;
+    }>(`/transactions/${address}?limit=${limit}`);
+    
+    // Convert to Transaction format
+    // Import the formatSLTN function for display amounts
+    const formatAmount = (atomic: string): string => {
+      const sltn = Number(atomic) / 1e9;
+      return sltn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 9 });
+    };
+    
+    return result.transactions.map(tx => ({
+      hash: tx.hash,
+      from: tx.from,
+      to: tx.to,
+      amount: tx.amount.toString(),
+      displayAmount: formatAmount(tx.amount.toString()),
+      memo: tx.memo || '',
+      timestamp: tx.timestamp,
+      blockHeight: tx.block_height,
+      status: tx.status as 'pending' | 'confirmed' | 'failed',
+    }));
+  } catch (error) {
+    console.warn('Failed to fetch transactions:', error);
+    return [];
+  }
 }
 
 /**
@@ -473,9 +515,10 @@ export const sultanAPI = {
   getValidators,
   getTransactions,
   getNetworkStatus,
-
+  
   /**
-   * Get current nonce for an address
+   * Get the current nonce for an address
+   * The nonce is fetched from the balance endpoint
    */
   getNonce: async (address: string): Promise<number> => {
     const balance = await getBalance(address);
@@ -507,14 +550,14 @@ export const sultanAPI = {
   },
 
   stake: async (req: StakeRequest): Promise<{ hash: string }> => {
+    // Fetch current nonce for proper transaction ordering
     const balance = await getBalance(req.delegatorAddress);
-    const nonce = balance.nonce;
     return stakeTokens({
       transaction: {
         from: req.delegatorAddress,
         to: req.validatorAddress,
         amount: req.amount,
-        nonce: nonce,
+        nonce: balance.nonce,
         timestamp: Date.now(),
       },
       signature: req.signature,
@@ -523,14 +566,14 @@ export const sultanAPI = {
   },
 
   unstake: async (req: UnstakeRequest): Promise<{ hash: string }> => {
+    // Fetch current nonce for proper transaction ordering
     const balance = await getBalance(req.delegatorAddress);
-    const nonce = balance.nonce;
     return unstakeTokens({
       transaction: {
         from: req.delegatorAddress,
         to: '', // Self-unbond
         amount: req.amount,
-        nonce: nonce,
+        nonce: balance.nonce,
         timestamp: Date.now(),
       },
       signature: req.signature,
@@ -539,14 +582,14 @@ export const sultanAPI = {
   },
 
   claimRewards: async (req: ClaimRewardsRequest): Promise<{ hash: string }> => {
+    // Fetch current nonce for proper transaction ordering
     const balance = await getBalance(req.delegatorAddress);
-    const nonce = balance.nonce;
     return claimRewards({
       transaction: {
         from: req.delegatorAddress,
         to: '',
         amount: '0',
-        nonce: nonce,
+        nonce: balance.nonce,
         timestamp: Date.now(),
       },
       signature: req.signature,
