@@ -12,7 +12,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useBalance } from '../hooks/useBalance';
 import { SultanWallet } from '../core/wallet';
 import { sultanAPI } from '../api/sultanAPI';
-import { validateSultanOnlyAddress, validateAmount, verifySessionPin } from '../core/security';
+import { validateSultanOnlyAddress, validateAmount, verifySessionPin, isHighValueTransaction, HIGH_VALUE_THRESHOLD_SLTN } from '../core/security';
 import './Send.css';
 
 // Premium SVG Icons
@@ -64,6 +64,7 @@ export default function Send() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [txHash, setTxHash] = useState('');
+  const [highValueWarning, setHighValueWarning] = useState(false);
   
   // PIN verification state
   const [pin, setPin] = useState(['', '', '', '', '', '']);
@@ -110,6 +111,8 @@ export default function Send() {
    * SECURITY: PIN must be verified before any signing operation
    */
   const handleConfirmToPin = () => {
+    // SECURITY: Warn user about high-value transactions
+    setHighValueWarning(isHighValueTransaction(amount));
     setError('');
     setPin(['', '', '', '', '', '']);
     setStep('pin');
@@ -336,6 +339,22 @@ export default function Send() {
             <span className="arrow">→</span>
             <span className="recipient">{recipient.slice(0, 12)}...</span>
           </div>
+
+          {highValueWarning && (
+            <div style={{ 
+              background: 'rgba(255, 193, 7, 0.15)', 
+              border: '1px solid rgba(255, 193, 7, 0.5)',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              maxWidth: '300px',
+              margin: '16px auto'
+            }}>
+              <p style={{ color: '#ffc107', fontSize: '14px', margin: 0 }}>
+                ⚠️ High-value transaction (&gt;{HIGH_VALUE_THRESHOLD_SLTN} SLTN)
+              </p>
+            </div>
+          )}
 
           <div className="pin-input-group">
             {pin.map((digit, index) => (

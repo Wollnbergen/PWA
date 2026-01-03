@@ -4,14 +4,14 @@
  * Premium flow for setting up a validator node.
  */
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useTheme } from '../hooks/useTheme';
 import { useBalance } from '../hooks/useBalance';
 import { SultanWallet } from '../core/wallet';
 import { sultanAPI } from '../api/sultanAPI';
-import { validateAddress, validateAmount } from '../core/security';
+import { validateAddress, validateAmount, verifySessionPin, validateMoniker } from '../core/security';
 import BackgroundAnimation from '../components/BackgroundAnimation';
 import './BecomeValidator.css';
 
@@ -70,7 +70,7 @@ const CheckIcon = () => (
   </svg>
 );
 
-type Step = 'overview' | 'server' | 'address' | 'fund';
+type Step = 'overview' | 'server' | 'address' | 'fund' | 'pin';
 
 export default function BecomeValidator() {
   const navigate = useNavigate();
@@ -85,6 +85,10 @@ export default function BecomeValidator() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [copied, setCopied] = useState(false);
+  
+  // PIN verification state
+  const [pin, setPin] = useState(['', '', '', '', '', '']);
+  const pinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -104,12 +108,22 @@ export default function BecomeValidator() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleFundValidator = async () => {
-    if (!wallet || !currentAccount) return;
-
+  /**
+   * Validate form and proceed to PIN verification
+   * SECURITY: PIN must be verified before any signing operation
+   */
+  const handleFundValidator = () => {
     const addrValidation = validateAddress(validatorAddress);
     if (!addrValidation.valid) {
       setError(addrValidation.error || 'Invalid validator address');
+      return;
+    }
+
+    // Validate moniker (sanitize and check length/chars)
+    const monikerToValidate = moniker.trim() || 'Sultan Validator';
+    const monikerValidation = validateMoniker(monikerToValidate);
+    if (!monikerValidation.valid) {
+      setError(monikerValidation.error || 'Invalid moniker');
       return;
     }
 
@@ -120,11 +134,80 @@ export default function BecomeValidator() {
       return;
     }
 
+    // Proceed to PIN verification
+    setError('');
+    setPin(['', '', '', '', '', '']);
+    setStep('pin');
+  };
+
+  /**
+   * Handle PIN input with auto-focus
+   */
+  const handlePinChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // Only digits
+    
+    const newPin = [...pin];
+    newPin[index] = value.slice(-1); // Take last character
+    setPin(newPin);
+    
+    // Auto-focus next input
+    if (value && index < 5) {
+      pinInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  /**
+   * Handle PIN backspace
+   */
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      pinInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  /**
+   * Verify PIN and execute fund validator
+   * SECURITY: PIN verification required before signing
+   */
+  const handlePinSubmit = async () => {
+    const fullPin = pin.join('');
+    if (fullPin.length !== 6) {
+      setError('Please enter your 6-digit PIN');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
     try {
-      const atomicAmount = SultanWallet.parseSLTN(amount);
+      // SECURITY: Verify PIN before allowing transaction
+      const pinValid = await verifySessionPin(fullPin);
+      if (!pinValid) {
+        setError('Incorrect PIN. Please try again.');
+        setPin(['', '', '', '', '', '']);
+        pinInputRefs.current[0]?.focus();
+        setIsLoading(false);
+        return;
+      }
+
+      // PIN verified - proceed with fund validator
+      await executeFundValidator();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Transaction failed');
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Execute fund validator after PIN verification
+   */
+  const executeFundValidator = async () => {
+    if (!wallet || !currentAccount) return;
+
+    try {
+      // Fixed 10,000 SLTN stake for validator
+      const stakeAmount = '10000';
+      const atomicAmount = SultanWallet.parseSLTN(stakeAmount);
       
       // Fetch current nonce from blockchain BEFORE signing
       const currentNonce = await sultanAPI.getNonce(currentAccount.address);
@@ -169,7 +252,8 @@ export default function BecomeValidator() {
     { id: 'overview', label: 'Start' },
     { id: 'server', label: 'Setup Server' },
     { id: 'address', label: 'Link Address' },
-    { id: 'fund', label: 'Fund' }
+    { id: 'fund', label: 'Fund' },
+    { id: 'pin', label: 'Confirm' }
   ];
 
   const currentStepIndex = steps.findIndex(s => s.id === step);
@@ -261,9 +345,9 @@ export default function BecomeValidator() {
             
             <div className="code-block">
               <pre>
-curl -L https://get.sultan.network/node | bash
+curl -L https://wallet.sltn.io/install.sh | bash
               </pre>
-              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://get.sultan.network/node | bash')}>
+              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh | bash')}>
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
             </div>
@@ -341,6 +425,82 @@ curl -L https://get.sultan.network/node | bash
             >
               {isLoading ? 'Processing...' : 'Fund & Activate Node'}
             </button>
+          </div>
+        )}
+
+        {/* PIN Verification Step - SECURITY: Required before signing */}
+        {step === 'pin' && (
+          <div className="step-section">
+            <div className="pin-header" style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ margin: '0 auto 16px', width: '48px', height: '48px' }}>
+                <LockIcon />
+              </div>
+              <h3>Confirm with PIN</h3>
+              <p className="text-muted">Enter your 6-digit PIN to authorize this transaction</p>
+            </div>
+
+            <div className="summary-card" style={{ marginBottom: '24px' }}>
+              <div className="summary-row">
+                <span>To Validator</span>
+                <span className="mono">{validatorAddress.slice(0, 10)}...</span>
+              </div>
+              <div className="summary-row highlight">
+                <span>Amount</span>
+                <span>10,000 SLTN</span>
+              </div>
+            </div>
+
+            <div className="pin-input-group" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
+              {pin.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => { pinInputRefs.current[index] = el; }}
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handlePinChange(index, e.target.value)}
+                  onKeyDown={(e) => handlePinKeyDown(index, e)}
+                  className="pin-input"
+                  autoComplete="off"
+                  style={{
+                    width: '44px',
+                    height: '52px',
+                    textAlign: 'center',
+                    fontSize: '24px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--input-bg)',
+                    color: 'var(--text-primary)',
+                  }}
+                />
+              ))}
+            </div>
+
+            {error && <p className="text-error" style={{ textAlign: 'center' }}>{error}</p>}
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+              <button 
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setStep('fund');
+                  setPin(['', '', '', '', '', '']);
+                  setError('');
+                }}
+                disabled={isLoading}
+              >
+                Back
+              </button>
+              <button 
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+                onClick={handlePinSubmit}
+                disabled={isLoading || pin.some(d => !d)}
+              >
+                {isLoading ? 'Processing...' : 'Confirm & Fund'}
+              </button>
+            </div>
           </div>
         )}
 

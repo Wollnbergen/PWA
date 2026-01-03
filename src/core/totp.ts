@@ -87,10 +87,15 @@ export function base32Decode(str: string): Uint8Array {
 
 // ============================================================================
 // HMAC-SHA1 using Web Crypto API
+// NOTE: SHA1 is used per RFC 6238 for compatibility with authenticator apps.
+// FUTURE: Consider SHA256 upgrade when authenticator apps widely support it.
+// Most apps (Google Authenticator, Authy) still expect SHA1 by default.
 // ============================================================================
 
 /**
  * Compute HMAC-SHA1
+ * SECURITY: SHA1 is cryptographically weak for collision resistance but
+ * HMAC-SHA1 remains secure for authentication per RFC 2104.
  */
 async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
   // Create new ArrayBuffers to satisfy TypeScript's strict typing

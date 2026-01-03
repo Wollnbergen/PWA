@@ -55,7 +55,7 @@ let db: IDBDatabase | null = null;
 // Session state
 let sessionMnemonic: SecureString | null = null;
 let sessionId: string | null = null;
-let sessionPinValue: string | null = null;
+let sessionPinSecure: SecureString | null = null; // SECURITY: XOR-encrypted in memory, not plaintext
 
 /**
  * Initialize IndexedDB with proper error handling
@@ -415,8 +415,13 @@ export function clearSession(): void {
     sessionMnemonic = null;
   }
   
+  // SECURITY: Properly destroy SecureString PIN
+  if (sessionPinSecure) {
+    sessionPinSecure.destroy();
+    sessionPinSecure = null;
+  }
+  
   sessionId = null;
-  sessionPinValue = null; // Also clear PIN
   endSession();
 }
 
@@ -458,11 +463,25 @@ export const walletStorage = {
   clearSession,
 };
 
-// Session PIN management for backward compatibility
+// Session PIN management
+// SECURITY: PIN is stored XOR-encrypted in memory via SecureString
 export function setSessionPin(pin: string): void {
-  sessionPinValue = pin;
+  // Destroy old session PIN if exists
+  if (sessionPinSecure) {
+    sessionPinSecure.destroy();
+  }
+  sessionPinSecure = new SecureString(pin);
 }
 
 export function getSessionPin(): string | null {
-  return sessionPinValue;
+  if (!sessionPinSecure) return null;
+  // SECURITY: Reveal returns decrypted value; caller should not store it
+  return sessionPinSecure.reveal();
+}
+
+export function clearSessionPin(): void {
+  if (sessionPinSecure) {
+    sessionPinSecure.destroy();
+    sessionPinSecure = null;
+  }
 }

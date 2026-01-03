@@ -8,8 +8,8 @@
 }
 
 .screen-header {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--bg-secondary);
@@ -19,12 +19,12 @@
 
 .screen-header h2 {
   font-size: 1.125rem;
+  flex: 1;
   text-align: center;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  grid-column: 2;
 }
 
 .btn-back,

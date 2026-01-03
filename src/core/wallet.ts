@@ -15,6 +15,7 @@ import { sha512 } from '@noble/hashes/sha512';
 import { randomBytes } from '@noble/hashes/utils';
 import * as ed25519 from '@noble/ed25519';
 import { bech32 } from 'bech32';
+import stringify from 'fast-json-stable-stringify';
 import { secureWipe, SecureString } from './security';
 
 // Configure ed25519 to use sha512
@@ -64,6 +65,7 @@ export interface SultanTransaction {
  */
 export class SultanWallet {
   private secureMnemonic: SecureString | null = null;
+  private securePassphrase: SecureString | null = null; // BIP39 optional passphrase
   private accounts: Map<number, SultanAccount> = new Map();
   private destroyed: boolean = false;
 
@@ -105,8 +107,10 @@ export class SultanWallet {
   /**
    * Create wallet from mnemonic
    * SECURITY: Mnemonic is immediately encrypted into SecureString
+   * @param mnemonic - BIP39 mnemonic phrase
+   * @param passphrase - Optional BIP39 passphrase for additional security
    */
-  static async fromMnemonic(mnemonic: string): Promise<SultanWallet> {
+  static async fromMnemonic(mnemonic: string, passphrase?: string): Promise<SultanWallet> {
     if (!SultanWallet.validateMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic phrase');
     }
@@ -114,6 +118,11 @@ export class SultanWallet {
     
     // SECURITY: Store mnemonic as SecureString (XOR encrypted)
     wallet.secureMnemonic = new SecureString(mnemonic);
+    
+    // SECURITY: Store passphrase if provided (BIP39 optional passphrase)
+    if (passphrase) {
+      wallet.securePassphrase = new SecureString(passphrase);
+    }
     
     // Derive first account by default
     await wallet.deriveAccount(0);
@@ -137,8 +146,9 @@ export class SultanWallet {
 
     // SECURITY: Decrypt mnemonic, use it, then let temporary reference go out of scope
     const mnemonic = this.secureMnemonic.reveal();
-    const seed = mnemonicToSeedSync(mnemonic);
-    // Note: mnemonic string goes out of scope here - V8 will GC it
+    const passphrase = this.securePassphrase?.reveal() ?? '';
+    const seed = mnemonicToSeedSync(mnemonic, passphrase);
+    // Note: mnemonic/passphrase strings go out of scope here - V8 will GC them
     
     const path = `m/44'/${SULTAN_COIN_TYPE}'/0'/0'/${index}`;
     
@@ -175,7 +185,8 @@ export class SultanWallet {
     }
 
     const mnemonic = this.secureMnemonic.reveal();
-    const seed = mnemonicToSeedSync(mnemonic);
+    const passphrase = this.securePassphrase?.reveal() ?? '';
+    const seed = mnemonicToSeedSync(mnemonic, passphrase);
     const path = `m/44'/${SULTAN_COIN_TYPE}'/0'/0'/${index}`;
     const privateKey = this.deriveEd25519Key(seed, path);
     
@@ -276,7 +287,9 @@ export class SultanWallet {
       throw new Error(`Account at index ${accountIndex} not found`);
     }
 
-    const canonical = JSON.stringify(txData);
+    // SECURITY: Use stable JSON stringify for deterministic key ordering
+    // This ensures signature matches node verification regardless of object key order
+    const canonical = stringify(txData);
     const msgBytes = sha256(new TextEncoder().encode(canonical));
     
     // SECURITY: Derive key on-demand
@@ -352,9 +365,11 @@ export class SultanWallet {
 
   /**
    * Serialize transaction for signing
+   * SECURITY: Uses stable JSON stringify for deterministic key ordering
    */
   private serializeTransaction(tx: SultanTransaction): Uint8Array {
-    const canonical = JSON.stringify({
+    // Use stable stringify to ensure consistent key ordering
+    const canonical = stringify({
       from: tx.from,
       to: tx.to,
       amount: tx.amount,
@@ -440,7 +455,7 @@ export class SultanWallet {
 // ============================================================================
 
 /**
- * Format base units to display units (9 decimals)
+ * Format base units to display units (9 decimals) with comma separators
  */
 export function formatSLTN(baseUnits: bigint | string | number): string {
   const value = BigInt(baseUnits);
@@ -448,13 +463,16 @@ export function formatSLTN(baseUnits: bigint | string | number): string {
   const intPart = value / divisor;
   const fracPart = value % divisor;
   
+  // Add comma separators to integer part
+  const intStr = intPart.toLocaleString('en-US');
+  
   if (fracPart === 0n) {
-    return intPart.toString();
+    return intStr;
   }
   
   const fracStr = fracPart.toString().padStart(SULTAN_DECIMALS, '0');
   const trimmed = fracStr.replace(/0+$/, '');
-  return `${intPart}.${trimmed}`;
+  return `${intStr}.${trimmed}`;
 }
 
 /**

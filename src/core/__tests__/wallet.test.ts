@@ -108,6 +108,75 @@ describe('SultanWallet - Creation', () => {
 });
 
 // ============================================================================
+// BIP39 Passphrase Tests (Security Feature)
+// ============================================================================
+
+describe('SultanWallet - BIP39 Passphrase', () => {
+  it('should derive different addresses with passphrase', async () => {
+    const walletNoPass = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24);
+    const walletWithPass = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'my-secure-passphrase');
+    
+    const accountNoPass = walletNoPass.getAccounts()[0];
+    const accountWithPass = walletWithPass.getAccounts()[0];
+    
+    // Different passphrase = different derived keys
+    expect(accountNoPass.address).not.toBe(accountWithPass.address);
+    expect(accountNoPass.publicKey).not.toBe(accountWithPass.publicKey);
+  });
+
+  it('should derive same addresses with same passphrase', async () => {
+    const wallet1 = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'secret');
+    const wallet2 = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'secret');
+    
+    const account1 = wallet1.getAccounts()[0];
+    const account2 = wallet2.getAccounts()[0];
+    
+    expect(account1.address).toBe(account2.address);
+    expect(account1.publicKey).toBe(account2.publicKey);
+  });
+
+  it('should derive different addresses with different passphrases', async () => {
+    const wallet1 = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'passphrase1');
+    const wallet2 = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'passphrase2');
+    
+    const account1 = wallet1.getAccounts()[0];
+    const account2 = wallet2.getAccounts()[0];
+    
+    expect(account1.address).not.toBe(account2.address);
+    expect(account1.publicKey).not.toBe(account2.publicKey);
+  });
+
+  it('should treat empty passphrase same as no passphrase', async () => {
+    const walletNoPass = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24);
+    const walletEmptyPass = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, '');
+    
+    const accountNoPass = walletNoPass.getAccounts()[0];
+    const accountEmptyPass = walletEmptyPass.getAccounts()[0];
+    
+    expect(accountNoPass.address).toBe(accountEmptyPass.address);
+    expect(accountNoPass.publicKey).toBe(accountEmptyPass.publicKey);
+  });
+
+  it('should produce deterministic signatures with passphrase', async () => {
+    const wallet = await SultanWallet.fromMnemonic(TEST_MNEMONIC_24, 'sign-test');
+    
+    const tx = {
+      from: 'sultan1test',
+      to: 'sultan1recipient',
+      amount: '1000000000',
+      nonce: 1,
+      timestamp: 1234567890,
+    };
+    
+    const sig1 = await wallet.signTransaction(tx, 0);
+    const sig2 = await wallet.signTransaction(tx, 0);
+    
+    expect(sig1).toBe(sig2);
+    expect(sig1).toMatch(/^[0-9a-f]{128}$/);
+  });
+});
+
+// ============================================================================
 // Account Derivation Tests
 // ============================================================================
 
@@ -218,7 +287,8 @@ describe('SultanWallet - Amount Formatting', () => {
     });
 
     it('should handle large amounts', () => {
-      expect(formatSLTN(1_000_000_000_000_000_000n)).toBe('1000000000');
+      // formatSLTN uses locale formatting with commas for readability
+      expect(formatSLTN(1_000_000_000_000_000_000n)).toBe('1,000,000,000');
     });
 
     it('should handle string input', () => {

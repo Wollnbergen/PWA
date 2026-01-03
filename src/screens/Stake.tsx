@@ -4,14 +4,14 @@
  * Stake SLTN with validators for 13.33% APY.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useTheme } from '../hooks/useTheme';
 import { useBalance, useStakingInfo, useValidators } from '../hooks/useBalance';
 import { SultanWallet } from '../core/wallet';
 import { sultanAPI, Validator } from '../api/sultanAPI';
-import { validateAmount } from '../core/security';
+import { validateAmount, verifySessionPin, isHighValueTransaction, HIGH_VALUE_THRESHOLD_SLTN } from '../core/security';
 import './Stake.css';
 
 // Premium SVG Icons
@@ -66,6 +66,8 @@ const LockIcon = () => (
 );
 
 type Tab = 'stake' | 'unstake' | 'validators';
+type Step = 'form' | 'pin';
+type PendingAction = 'stake' | 'unstake' | 'claim' | null;
 
 export default function Stake() {
   const navigate = useNavigate();
@@ -76,11 +78,18 @@ export default function Stake() {
   const { data: validators } = useValidators();
   
   const [tab, setTab] = useState<Tab>('stake');
+  const [step, setStep] = useState<Step>('form');
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [amount, setAmount] = useState('');
   const [selectedValidator, setSelectedValidator] = useState<Validator | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [highValueWarning, setHighValueWarning] = useState(false);
+  
+  // PIN verification state
+  const [pin, setPin] = useState(['', '', '', '', '', '']);
+  const pinInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -96,19 +105,150 @@ export default function Stake() {
     }
   }, [validators, selectedValidator]);
 
-  const handleStake = async () => {
+  // Focus first PIN input when entering PIN step
+  useEffect(() => {
+    if (step === 'pin') {
+      pinInputRefs.current[0]?.focus();
+    }
+  }, [step]);
+
+  /**
+   * Handle PIN input with auto-focus
+   */
+  const handlePinChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return; // Only digits
+    
+    const newPin = [...pin];
+    newPin[index] = value.slice(-1);
+    setPin(newPin);
+    
+    if (value && index < 5) {
+      pinInputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  /**
+   * Handle PIN backspace
+   */
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      pinInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  /**
+   * Request PIN verification before staking
+   * SECURITY: PIN must be verified before any signing operation
+   * SECURITY: Validates validator exists to prevent staking to unknown addresses
+   */
+  const handleStake = () => {
     if (!wallet || !currentAccount || !selectedValidator) return;
 
-    // Validate amount before proceeding
     const amountValidation = validateAmount(amount, availableBalance);
     if (!amountValidation.valid) {
       setError(amountValidation.error || 'Invalid amount');
       return;
     }
 
+    // SECURITY: Verify validator exists in the active validators list
+    if (!validators || validators.length === 0) {
+      setError('Unable to verify validators. Please try again.');
+      return;
+    }
+
+    const validatorExists = validators.some(v => v.address === selectedValidator.address);
+    if (!validatorExists) {
+      setError('Selected validator is not in the active validators list');
+      return;
+    }
+
+    // SECURITY: Warn user about high-value transactions
+    setHighValueWarning(isHighValueTransaction(amount));
+
+    setError('');
+    setPin(['', '', '', '', '', '']);
+    setPendingAction('stake');
+    setStep('pin');
+  };
+
+  /**
+   * Request PIN verification before unstaking
+   * SECURITY: PIN must be verified before any signing operation
+   */
+  const handleUnstake = () => {
+    if (!wallet || !currentAccount) return;
+
+    const amountValidation = validateAmount(amount, stakedBalance);
+    if (!amountValidation.valid) {
+      setError(amountValidation.error || 'Invalid amount');
+      return;
+    }
+
+    // SECURITY: Warn user about high-value transactions
+    setHighValueWarning(isHighValueTransaction(amount));
+
+    setError('');
+    setPin(['', '', '', '', '', '']);
+    setPendingAction('unstake');
+    setStep('pin');
+  };
+
+  /**
+   * Request PIN verification before claiming rewards
+   * SECURITY: PIN must be verified before any signing operation
+   */
+  const handleClaimRewards = () => {
+    if (!wallet || !currentAccount) return;
+
+    setError('');
+    setPin(['', '', '', '', '', '']);
+    setPendingAction('claim');
+    setStep('pin');
+  };
+
+  /**
+   * Verify PIN and execute pending action
+   * SECURITY: PIN verification required before signing
+   */
+  const handlePinSubmit = async () => {
+    const fullPin = pin.join('');
+    if (fullPin.length !== 6) {
+      setError('Please enter your 6-digit PIN');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
-    setSuccess('');
+
+    try {
+      const pinValid = await verifySessionPin(fullPin);
+      if (!pinValid) {
+        setError('Incorrect PIN. Please try again.');
+        setPin(['', '', '', '', '', '']);
+        pinInputRefs.current[0]?.focus();
+        setIsLoading(false);
+        return;
+      }
+
+      // PIN verified - execute pending action
+      if (pendingAction === 'stake') {
+        await executeStake();
+      } else if (pendingAction === 'unstake') {
+        await executeUnstake();
+      } else if (pendingAction === 'claim') {
+        await executeClaim();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Operation failed');
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Execute stake after PIN verification
+   */
+  const executeStake = async () => {
+    if (!wallet || !currentAccount || !selectedValidator) return;
 
     try {
       const atomicAmount = SultanWallet.parseSLTN(amount);
@@ -133,6 +273,8 @@ export default function Stake() {
 
       setSuccess(`Successfully staked ${amount} SLTN!`);
       setAmount('');
+      setStep('form');
+      setPendingAction(null);
       refetchStaking();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Staking failed');
@@ -141,19 +283,11 @@ export default function Stake() {
     }
   };
 
-  const handleUnstake = async () => {
+  /**
+   * Execute unstake after PIN verification
+   */
+  const executeUnstake = async () => {
     if (!wallet || !currentAccount) return;
-
-    // Validate amount against staked balance
-    const amountValidation = validateAmount(amount, stakedBalance);
-    if (!amountValidation.valid) {
-      setError(amountValidation.error || 'Invalid amount');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
 
     try {
       const atomicAmount = SultanWallet.parseSLTN(amount);
@@ -176,6 +310,8 @@ export default function Stake() {
 
       setSuccess(`Unstaking ${amount} SLTN initiated. 21-day unbonding period.`);
       setAmount('');
+      setStep('form');
+      setPendingAction(null);
       refetchStaking();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unstaking failed');
@@ -184,16 +320,11 @@ export default function Stake() {
     }
   };
 
-  const handleLock = () => {
-    lock();
-    navigate('/unlock');
-  };
-
-  const handleClaimRewards = async () => {
+  /**
+   * Execute claim rewards after PIN verification
+   */
+  const executeClaim = async () => {
     if (!wallet || !currentAccount) return;
-
-    setIsLoading(true);
-    setError('');
 
     try {
       const txData = {
@@ -211,6 +342,8 @@ export default function Stake() {
       });
 
       setSuccess('Rewards claimed successfully!');
+      setStep('form');
+      setPendingAction(null);
       refetchStaking();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Claiming failed');
@@ -218,6 +351,104 @@ export default function Stake() {
       setIsLoading(false);
     }
   };
+
+  const handleLock = () => {
+    lock();
+    navigate('/unlock');
+  };
+
+  const handleCancelPin = () => {
+    setStep('form');
+    setPendingAction(null);
+    setPin(['', '', '', '', '', '']);
+    setError('');
+  };
+
+  // PIN verification screen
+  if (step === 'pin') {
+    return (
+      <div className="stake-screen">
+        <header className="screen-header">
+          <button className="btn-back" onClick={handleCancelPin}>
+            <BackIcon />
+          </button>
+          <h2>Confirm PIN</h2>
+          <div style={{ width: '20px' }} />
+        </header>
+
+        <div className="stake-content fade-in" style={{ textAlign: 'center', paddingTop: '60px' }}>
+          <LockIcon />
+          <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>Enter PIN to {pendingAction}</h3>
+          <p className="text-muted" style={{ marginBottom: '16px' }}>
+            {pendingAction === 'stake' && `Stake ${amount} SLTN with validator`}
+            {pendingAction === 'unstake' && `Unstake ${amount} SLTN (21-day unbonding)`}
+            {pendingAction === 'claim' && 'Claim your pending rewards'}
+          </p>
+          {highValueWarning && (
+            <div style={{ 
+              background: 'rgba(255, 193, 7, 0.15)', 
+              border: '1px solid rgba(255, 193, 7, 0.5)',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginBottom: '16px',
+              maxWidth: '300px',
+              margin: '0 auto 16px'
+            }}>
+              <p style={{ color: '#ffc107', fontSize: '14px', margin: 0 }}>
+                ⚠️ High-value transaction (&gt;{HIGH_VALUE_THRESHOLD_SLTN} SLTN)
+              </p>
+            </div>
+          )}
+
+          <div className="pin-inputs" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+            {pin.map((digit, index) => (
+              <input
+                key={index}
+                ref={el => { pinInputRefs.current[index] = el; }}
+                type="password"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={e => handlePinChange(index, e.target.value)}
+                onKeyDown={e => handlePinKeyDown(index, e)}
+                className="pin-input"
+                style={{
+                  width: '48px',
+                  height: '56px',
+                  textAlign: 'center',
+                  fontSize: '24px',
+                  borderRadius: '12px',
+                  border: '2px solid var(--color-border)',
+                  background: 'var(--color-bg-secondary)',
+                  color: 'var(--color-text-primary)',
+                }}
+                autoComplete="off"
+              />
+            ))}
+          </div>
+
+          {error && <p className="text-error mb-md">{error}</p>}
+
+          <button
+            className="btn btn-primary"
+            onClick={handlePinSubmit}
+            disabled={isLoading || pin.join('').length !== 6}
+            style={{ width: '100%', maxWidth: '300px' }}
+          >
+            {isLoading ? 'Processing...' : 'Confirm'}
+          </button>
+
+          <button
+            className="btn btn-secondary mt-md"
+            onClick={handleCancelPin}
+            style={{ width: '100%', maxWidth: '300px' }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="stake-screen">

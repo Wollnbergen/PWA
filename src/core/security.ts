@@ -33,6 +33,15 @@ export const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
 /** Session timeout in milliseconds (5 minutes of inactivity) */
 export const SESSION_TIMEOUT_MS = 5 * 60 * 1000;
 
+/** High-value transaction threshold in SLTN (requires re-PIN confirmation) */
+export const HIGH_VALUE_THRESHOLD_SLTN = 1000;
+
+/** Maximum moniker length for validators */
+export const MAX_MONIKER_LENGTH = 50;
+
+/** Minimum moniker length for validators */
+export const MIN_MONIKER_LENGTH = 3;
+
 /** PBKDF2 iterations - OWASP 2024 recommendation for SHA-256 */
 export const PBKDF2_ITERATIONS = 600_000;
 
@@ -487,6 +496,44 @@ export function sanitizeInput(input: string): string {
     .replace(/javascript:/gi, '') // Remove javascript: protocol
     .replace(/on\w+\s*=/gi, '') // Remove event handlers
     .trim();
+}
+
+/**
+ * Validate validator moniker
+ * - Length: 3-50 characters
+ * - Characters: alphanumeric, spaces, hyphens, underscores
+ * - No special characters or HTML
+ */
+export function validateMoniker(moniker: string): { valid: boolean; error?: string; sanitized?: string } {
+  if (!moniker || typeof moniker !== 'string') {
+    return { valid: false, error: 'Moniker is required' };
+  }
+
+  // Sanitize first to remove XSS vectors
+  const sanitized = sanitizeInput(moniker);
+
+  if (sanitized.length < MIN_MONIKER_LENGTH) {
+    return { valid: false, error: `Moniker must be at least ${MIN_MONIKER_LENGTH} characters` };
+  }
+
+  if (sanitized.length > MAX_MONIKER_LENGTH) {
+    return { valid: false, error: `Moniker must be at most ${MAX_MONIKER_LENGTH} characters` };
+  }
+
+  // Only allow safe characters: alphanumeric, spaces, hyphens, underscores
+  if (!/^[a-zA-Z0-9\s_-]+$/.test(sanitized)) {
+    return { valid: false, error: 'Moniker can only contain letters, numbers, spaces, hyphens, and underscores' };
+  }
+
+  return { valid: true, sanitized };
+}
+
+/**
+ * Check if amount exceeds high-value threshold (requires extra confirmation)
+ */
+export function isHighValueTransaction(amountSLTN: string | number): boolean {
+  const amount = typeof amountSLTN === 'string' ? parseFloat(amountSLTN) : amountSLTN;
+  return !isNaN(amount) && amount >= HIGH_VALUE_THRESHOLD_SLTN;
 }
 
 /**

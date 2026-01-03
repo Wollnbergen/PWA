@@ -246,7 +246,7 @@ export default function NFTs() {
               </button>
               <button 
                 className="btn btn-secondary"
-                onClick={() => window.open(`https://explorer.sultanchain.io/nft/${selectedNFT.contractAddress}/${selectedNFT.tokenId}`, '_blank')}
+                onClick={() => window.open(`https://x.sltn.io/nft/${selectedNFT.contractAddress}/${selectedNFT.tokenId}`, '_blank')}
               >
                 <ExternalLinkIcon /> View on Explorer
               </button>

@@ -11,6 +11,7 @@ const isTest = import.meta.env.MODE === 'test';
 
 /**
  * Sensitive patterns that should NEVER be logged
+ * SECURITY: These patterns detect sensitive data in log arguments
  */
 const SENSITIVE_PATTERNS = [
   /mnemonic/i,
@@ -19,7 +20,8 @@ const SENSITIVE_PATTERNS = [
   /secret/i,
   /password/i,
   /pin/i,
-  /[a-f0-9]{64}/i, // Private key hex pattern
+  /[a-f0-9]{64}/i, // Private key hex pattern (32 bytes)
+  /^sultan1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{30,}$/i, // Bech32 Sultan addresses (38+ total chars)
 ];
 
 /**

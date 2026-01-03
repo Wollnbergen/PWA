@@ -2,10 +2,22 @@
  * Sultan RPC API Client
  * 
  * Connects to the Sultan L1 blockchain REST API.
+ * 
+ * SECURITY FEATURES:
+ * - HTTPS endpoint (MITM protection)
+ * - Request timeout with AbortController (DoS protection)
+ * - Retry with exponential backoff (transient error handling)
+ * - Zod response validation (type safety)
+ * - User-Agent tracking
  */
+
+import { z } from 'zod';
 
 // Production RPC endpoint (HTTPS via nginx)
 const RPC_URL = 'https://rpc.sltn.io';
+
+// Wallet version for User-Agent header
+const WALLET_VERSION = 'Sultan-Wallet/1.0';
 
 export interface AccountBalance {
   address: string;
@@ -93,32 +105,171 @@ export interface UserVote {
   votingPower: string;
 }
 
+// Default timeout for API requests (30 seconds)
+const API_TIMEOUT_MS = 30000;
+
+// Retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY_MS = 1000;
+const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+
+// ============================================================================
+// Zod Response Schemas (Runtime Type Validation)
+// ============================================================================
+
+const BalanceResponseSchema = z.object({
+  address: z.string(),
+  balance: z.number(),
+  nonce: z.number(),
+});
+
+const DelegationSchema = z.object({
+  delegator_address: z.string(),
+  validator_address: z.string(),
+  amount: z.number(),
+  rewards_accumulated: z.number(),
+});
+
+const ValidatorSchema = z.object({
+  validator_address: z.string(),
+  self_stake: z.number().optional().default(0),
+  delegated_stake: z.number().optional().default(0),
+  total_stake: z.number(),
+  commission_rate: z.number(),
+  jailed: z.boolean(),
+  blocks_signed: z.number().optional().default(0),
+  blocks_missed: z.number().optional().default(0),
+});
+
+const TransactionResponseSchema = z.object({
+  address: z.string(),
+  transactions: z.array(z.object({
+    hash: z.string(),
+    from: z.string(),
+    to: z.string(),
+    amount: z.number(),
+    memo: z.string().optional(),
+    nonce: z.number(),
+    timestamp: z.number(),
+    block_height: z.number(),
+    status: z.string(),
+  })),
+  count: z.number(),
+});
+
+const StatusResponseSchema = z.object({
+  height: z.number(),
+  validator_count: z.number(),
+  shard_count: z.number().optional().default(1),
+  validator_apy: z.number(),
+  sharding_enabled: z.boolean().optional().default(false),
+});
+
+const TxHashResponseSchema = z.object({
+  hash: z.string(),
+});
+
 /**
- * Make REST API request
+ * Sleep helper for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Check if error is retryable (network/transient)
+ */
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof TypeError) {
+    // Network errors (fetch failed)
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Make REST API request with timeout and retry
+ * SECURITY: Uses AbortController to prevent hanging requests (DoS protection)
+ * RELIABILITY: Exponential backoff retry for transient errors
  */
 async function restApi<T>(
   endpoint: string, 
   method: 'GET' | 'POST' = 'GET',
-  body?: Record<string, unknown>
+  body?: Record<string, unknown>,
+  timeoutMs: number = API_TIMEOUT_MS,
+  schema?: z.ZodType<T>
 ): Promise<T> {
-  const options: RequestInit = {
-    method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (body && method === 'POST') {
-    options.body = JSON.stringify(body);
+    try {
+      const options: RequestInit = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': WALLET_VERSION,
+        },
+        signal: controller.signal,
+      };
+
+      if (body && method === 'POST') {
+        options.body = JSON.stringify(body);
+      }
+
+      const response = await fetch(`${RPC_URL}${endpoint}`, options);
+
+      // Check for retryable status codes
+      if (!response.ok) {
+        if (RETRYABLE_STATUS_CODES.includes(response.status) && attempt < MAX_RETRIES - 1) {
+          const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+          console.warn(`API error ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          clearTimeout(timeoutId);
+          await sleep(delay);
+          continue;
+        }
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const json = await response.json();
+      
+      // Validate response with Zod schema if provided
+      if (schema) {
+        const result = schema.safeParse(json);
+        if (!result.success) {
+          console.error('Response validation failed:', result.error.issues);
+          throw new Error(`Invalid API response: ${result.error.issues[0]?.message || 'validation failed'}`);
+        }
+        return result.data;
+      }
+      
+      return json as T;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeoutMs}ms`);
+      }
+      
+      // Retry on network errors
+      if (isRetryableError(error) && attempt < MAX_RETRIES - 1) {
+        const delay = INITIAL_RETRY_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`Network error, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        await sleep(delay);
+        continue;
+      }
+      
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
-
-  const response = await fetch(`${RPC_URL}${endpoint}`, options);
-
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
-
-  return response.json();
+  
+  throw lastError || new Error('Max retries exceeded');
 }
 
 /**
@@ -126,8 +277,14 @@ async function restApi<T>(
  */
 export async function getBalance(address: string): Promise<AccountBalance> {
   try {
-    // Use REST API: GET /balance/{address}
-    const result = await restApi<{ address: string; balance: number; nonce: number }>(`/balance/${address}`);
+    // Use REST API: GET /balance/{address} with Zod validation
+    const result = await restApi(
+      `/balance/${address}`,
+      'GET',
+      undefined,
+      API_TIMEOUT_MS,
+      BalanceResponseSchema
+    );
     
     return {
       address: result.address,
@@ -151,14 +308,14 @@ export async function getBalance(address: string): Promise<AccountBalance> {
  */
 export async function getStakingInfo(address: string): Promise<StakingInfo> {
   try {
-    // Use REST API: GET /staking/delegations/{address}
-    // Node returns an array of Delegation objects
-    const result = await restApi<Array<{
-      delegator_address: string;
-      validator_address: string;
-      amount: number;
-      rewards_accumulated: number;
-    }>>(`/staking/delegations/${address}`);
+    // Use REST API: GET /staking/delegations/{address} with Zod validation
+    const result = await restApi(
+      `/staking/delegations/${address}`,
+      'GET',
+      undefined,
+      API_TIMEOUT_MS,
+      z.array(DelegationSchema)
+    );
 
     // Sum up all delegations for this address
     const totalStaked = result.reduce((sum, d) => sum + (d.amount || 0), 0);
@@ -182,18 +339,14 @@ export async function getStakingInfo(address: string): Promise<StakingInfo> {
  */
 export async function getValidators(): Promise<Validator[]> {
   try {
-    // Use REST API: GET /staking/validators
-    // Node returns: validator_address, total_stake, commission_rate, jailed
-    const result = await restApi<Array<{ 
-      validator_address: string; 
-      self_stake: number;
-      delegated_stake: number;
-      total_stake: number; 
-      commission_rate: number; 
-      jailed: boolean;
-      blocks_signed: number;
-      blocks_missed: number;
-    }>>('/staking/validators');
+    // Use REST API: GET /staking/validators with Zod validation
+    const result = await restApi(
+      '/staking/validators',
+      'GET',
+      undefined,
+      API_TIMEOUT_MS,
+      z.array(ValidatorSchema)
+    );
     
     // If empty array, return empty (no fallback to mocks)
     if (!result || result.length === 0) {
@@ -242,21 +395,14 @@ export async function getTransactions(
   _offset = 0
 ): Promise<Transaction[]> {
   try {
-    const result = await restApi<{
-      address: string;
-      transactions: Array<{
-        hash: string;
-        from: string;
-        to: string;
-        amount: number;
-        memo?: string;
-        nonce: number;
-        timestamp: number;
-        block_height: number;
-        status: string;
-      }>;
-      count: number;
-    }>(`/transactions/${address}?limit=${limit}`);
+    // Use Zod validation for response
+    const result = await restApi(
+      `/transactions/${address}?limit=${limit}`,
+      'GET',
+      undefined,
+      API_TIMEOUT_MS,
+      TransactionResponseSchema
+    );
     
     // Convert to Transaction format
     // Import the formatSLTN function for display amounts
@@ -287,14 +433,14 @@ export async function getTransactions(
  */
 export async function getNetworkStatus(): Promise<NetworkStatus> {
   try {
-    // Use REST API: GET /status
-    const result = await restApi<{
-      height: number;
-      validator_count: number;
-      shard_count: number;
-      validator_apy: number;
-      sharding_enabled: boolean;
-    }>('/status');
+    // Use REST API: GET /status with Zod validation
+    const result = await restApi(
+      '/status',
+      'GET',
+      undefined,
+      API_TIMEOUT_MS,
+      StatusResponseSchema
+    );
     
     return {
       chainId: 'sultan-mainnet-1',
@@ -335,12 +481,18 @@ export async function broadcastTransaction(
     publicKey: string;
   }
 ): Promise<{ hash: string }> {
-  // Use REST API: POST /tx
-  const result = await restApi<{ hash: string }>('/tx', 'POST', {
-    tx: signedTx.transaction,
-    signature: signedTx.signature,
-    public_key: signedTx.publicKey,
-  });
+  // Use REST API: POST /tx with Zod validation
+  const result = await restApi(
+    '/tx',
+    'POST',
+    {
+      tx: signedTx.transaction,
+      signature: signedTx.signature,
+      public_key: signedTx.publicKey,
+    },
+    API_TIMEOUT_MS,
+    TxHashResponseSchema
+  );
 
   return result;
 }
@@ -362,12 +514,18 @@ export async function stakeTokens(
     publicKey: string;
   }
 ): Promise<{ hash: string }> {
-  // Use REST API: POST /staking/delegate
-  const result = await restApi<{ hash: string }>('/staking/delegate', 'POST', {
-    tx: signedTx.transaction,
-    signature: signedTx.signature,
-    public_key: signedTx.publicKey,
-  });
+  // Use REST API: POST /staking/delegate with Zod validation
+  const result = await restApi(
+    '/staking/delegate',
+    'POST',
+    {
+      tx: signedTx.transaction,
+      signature: signedTx.signature,
+      public_key: signedTx.publicKey,
+    },
+    API_TIMEOUT_MS,
+    TxHashResponseSchema
+  );
 
   return result;
 }
@@ -388,12 +546,18 @@ export async function unstakeTokens(
     publicKey: string;
   }
 ): Promise<{ hash: string }> {
-  // Use REST API: POST /staking/undelegate (if available)
-  const result = await restApi<{ hash: string }>('/staking/undelegate', 'POST', {
-    tx: signedTx.transaction,
-    signature: signedTx.signature,
-    public_key: signedTx.publicKey,
-  });
+  // Use REST API: POST /staking/undelegate with Zod validation
+  const result = await restApi(
+    '/staking/undelegate',
+    'POST',
+    {
+      tx: signedTx.transaction,
+      signature: signedTx.signature,
+      public_key: signedTx.publicKey,
+    },
+    API_TIMEOUT_MS,
+    TxHashResponseSchema
+  );
 
   return result;
 }
@@ -414,12 +578,18 @@ export async function claimRewards(
     publicKey: string;
   }
 ): Promise<{ hash: string }> {
-  // Use REST API: POST /staking/withdraw_rewards
-  const result = await restApi<{ hash: string }>('/staking/withdraw_rewards', 'POST', {
-    tx: signedTx.transaction,
-    signature: signedTx.signature,
-    public_key: signedTx.publicKey,
-  });
+  // Use REST API: POST /staking/withdraw_rewards with Zod validation
+  const result = await restApi(
+    '/staking/withdraw_rewards',
+    'POST',
+    {
+      tx: signedTx.transaction,
+      signature: signedTx.signature,
+      public_key: signedTx.publicKey,
+    },
+    API_TIMEOUT_MS,
+    TxHashResponseSchema
+  );
 
   return result;
 }
