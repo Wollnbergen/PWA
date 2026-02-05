@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sultan Wallet Test dApp</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-card: #12121a;
+      --border: #2a2a3a;
+      --text: #ffffff;
+      --text-muted: #888;
+      --accent: #d4af37;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--accent), #f4cf67);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+    }
+    
+    .status-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--error);
+    }
+    
+    .status-dot.connected {
+      background: var(--success);
+    }
+    
+    .address {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 14px;
+      color: var(--accent);
+    }
+    
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .card h2 .badge {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #c9a030);
+      color: #000;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+    
+    .btn-secondary {
+      background: var(--border);
+      color: var(--text);
+    }
+    
+    .btn-secondary:hover:not(:disabled) {
+      background: #3a3a4a;
+    }
+    
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+    
+    .input-group {
+      margin-bottom: 16px;
+    }
+    
+    .input-group label {
+      display: block;
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .result {
+      margin-top: 16px;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+    
+    .result.success {
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+    }
+    
+    .result.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+    }
+    
+    .result.info {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    
+    .log-container {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .log-entry {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      font-family: 'Monaco', 'Consolas', monospace;
+    }
+    
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    
+    .log-entry .time {
+      color: var(--text-muted);
+      margin-right: 8px;
+    }
+    
+    .log-entry.event {
+      color: var(--accent);
+    }
+    
+    .log-entry.error {
+      color: var(--error);
+    }
+    
+    .log-entry.success {
+      color: var(--success);
+    }
+    
+    .not-installed {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    
+    .not-installed h2 {
+      margin-bottom: 16px;
+    }
+    
+    .not-installed p {
+      color: var(--text-muted);
+      margin-bottom: 24px;
+    }
+    
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏛️ Sultan Wallet Test dApp</h1>
+    <p class="subtitle">Integration testing for the Sultan Wallet browser extension</p>
+    
+    <div id="app">
+      <!-- Content injected by JS -->
+    </div>
+  </div>
+
+  <script>
+    // State
+    let isConnected = false;
+    let connectedAddress = null;
+    let logs = [];
+
+    // DOM helpers
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    function log(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      logs.unshift({ time, message, type });
+      if (logs.length > 50) logs.pop();
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const container = $('#log-container');
+      if (!container) return;
+      
+      container.innerHTML = logs.map(l => `
+        <div class="log-entry ${l.type}">
+          <span class="time">[${l.time}]</span>
+          ${l.message}
+        </div>
+      `).join('');
+    }
+
+    function showResult(elementId, message, type = 'info') {
+      const el = $(`#${elementId}`);
+      if (el) {
+        el.className = `result ${type}`;
+        el.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+        el.style.display = 'block';
+      }
+    }
+
+    function render() {
+      console.log('[TestDApp] render() called, isConnected:', isConnected, 'address:', connectedAddress);
+      const app = $('#app');
+      
+      if (typeof window.sultan === 'undefined') {
+        app.innerHTML = `
+          <div class="not-installed">
+            <h2>⚠️ Sultan Wallet Not Detected</h2>
+            <p>Please install the Sultan Wallet browser extension and refresh this page.</p>
+            <button class="btn-primary" onclick="location.reload()">Refresh Page</button>
+          </div>
+        `;
+        return;
+      }
+
+      app.innerHTML = `
+        <div class="status-bar">
+          <div class="status-item">
+            <div class="status-dot ${isConnected ? 'connected' : ''}"></div>
+            <span>${isConnected ? 'Connected' : 'Not Connected'}</span>
+          </div>
+          ${connectedAddress ? `<span class="address">${connectedAddress}</span>` : ''}
+          ${isConnected ? `<button class="btn-danger" onclick="disconnect()">Disconnect</button>` : ''}
+        </div>
+
+        <div class="grid-2">
+          <!-- Connect Card -->
+          <div class="card">
+            <h2>🔗 Connect <span class="badge">Step 1</span></h2>
+            <p style="color: var(--text-muted); margin-bottom: 16px;">
+              Request wallet connection to access your account.
+            </p>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="connect()" ${isConnected ? 'disabled' : ''}>
+                ${isConnected ? '✓ Connected' : 'Connect Wallet'}
+              </button>
+              <button class="btn-secondary" onclick="getAccounts()">Get Accounts</button>
+            </div>
+            <div id="connect-result" class="result" style="display: none;"></div>
+          </div>
+
+          <!-- Sign Message Card -->
+          <div class="card">
+            <h2>✍️ Sign Message <span class="badge">Step 2</span></h2>
+            <div class="input-group">
+              <label>Message to sign</label>
+              <textarea id="sign-message" placeholder="Enter a message to sign...">Hello from Sultan Test dApp!</textarea>
+            </div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="signMessage()" ${!isConnected ? 'disabled' : ''}>
+                Sign Message
+              </button>
+            </div>
+            <div id="sign-result" class="result" style="display: none;"></div>
+          </div>
+
+          <!-- Sign Transaction Card -->
+          <div class="card">
+            <h2>💸 Sign Transaction <span class="badge">Step 3</span></h2>
+            <div class="input-group">
+              <label>Recipient Address</label>
+              <input type="text" id="tx-to" placeholder="sultan1..." value="sultan1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqz6extq">
+            </div>
+            <div class="input-group">
+              <label>Amount (SLTN)</label>
+              <input type="text" id="tx-amount" placeholder="0.1" value="0.001">
+            </div>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="signTransaction(false)" ${!isConnected ? 'disabled' : ''}>
+                Sign Only
+              </button>
+              <button class="btn-secondary" onclick="signTransaction(true)" ${!isConnected ? 'disabled' : ''}>
+                Sign & Broadcast
+              </button>
+            </div>
+            <div id="tx-result" class="result" style="display: none;"></div>
+          </div>
+
+          <!-- Get Balance Card -->
+          <div class="card">
+            <h2>💰 Get Balance</h2>
+            <div class="btn-group">
+              <button class="btn-primary" onclick="getBalance()" ${!isConnected ? 'disabled' : ''}>
+                Get Balance
+              </button>
+              <button class="btn-secondary" onclick="getChainInfo()">
+                Get Chain Info
+              </button>
+            </div>
+            <div id="balance-result" class="result" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Event Log -->
+        <div class="card" style="margin-top: 20px;">
+          <h2>📋 Event Log</h2>
+          <div id="log-container" class="log-container">
+            ${logs.length === 0 ? '<div class="log-entry" style="color: var(--text-muted);">No events yet...</div>' : ''}
+          </div>
+        </div>
+      `;
+      
+      renderLogs();
+    }
+
+    // Wallet Actions
+    async function connect() {
+      log('Requesting connection...');
+      try {
+        const result = await window.sultan.connect();
+        log(`Connected: ${result.address}`, 'success');
+        isConnected = true;
+        connectedAddress = result.address;
+        showResult('connect-result', result, 'success');
+        render();
+      } catch (err) {
+        log(`Connection failed: ${err.message}`, 'error');
+        showResult('connect-result', err.message, 'error');
+      }
+    }
+
+    async function disconnect() {
+      log('Disconnecting...');
+      try {
+        await window.sultan.disconnect();
+        log('Disconnected', 'success');
+        isConnected = false;
+        connectedAddress = null;
+        render();
+      } catch (err) {
+        log(`Disconnect failed: ${err.message}`, 'error');
+      }
+    }
+
+    async function getAccounts() {
+      log('Getting accounts...');
+      try {
+        const accounts = await window.sultan.getAccounts();
+        log(`Got ${accounts.length} account(s)`, 'success');
+        showResult('connect-result', accounts, 'success');
+      } catch (err) {
+        log(`Failed: ${err.message}`, 'error');
+        showResult('connect-result', err.message, 'error');
+      }
+    }
+
+    async function signMessage() {
+      const message = $('#sign-message').value;
+      if (!message) {
+        showResult('sign-result', 'Please enter a message', 'error');
+        return;
+      }
+      
+      log(`Signing message: "${message.substring(0, 30)}..."`);
+      try {
+        const result = await window.sultan.signMessage(message);
+        log('Message signed successfully', 'success');
+        showResult('sign-result', result, 'success');
+      } catch (err) {
+        log(`Sign failed: ${err.message}`, 'error');
+        showResult('sign-result', err.message, 'error');
+      }
+    }
+
+    async function signTransaction(broadcast) {
+      const to = $('#tx-to').value;
+      const amount = $('#tx-amount').value;
+      
+      if (!to || !amount) {
+        showResult('tx-result', 'Please fill in all fields', 'error');
+        return;
+      }
+      
+      const tx = {
+        to,
+        amount,
+        denom: 'usltn',
+        memo: 'Test transaction from dApp'
+      };
+      
+      log(`${broadcast ? 'Signing & broadcasting' : 'Signing'} transaction...`);
+      try {
+        const result = await window.sultan.signTransaction(tx, { broadcast });
+        log(`Transaction ${broadcast ? 'broadcast' : 'signed'} successfully`, 'success');
+        showResult('tx-result', result, 'success');
+      } catch (err) {
+        log(`Transaction failed: ${err.message}`, 'error');
+        showResult('tx-result', err.message, 'error');
+      }
+    }
+
+    async function getBalance() {
+      log('Getting balance...');
+      try {
+        const balance = await window.sultan.getBalance();
+        log(`Balance: ${balance.amount} ${balance.denom}`, 'success');
+        showResult('balance-result', balance, 'success');
+      } catch (err) {
+        log(`Failed: ${err.message}`, 'error');
+        showResult('balance-result', err.message, 'error');
+      }
+    }
+
+    async function getChainInfo() {
+      log('Getting chain info...');
+      try {
+        const info = await window.sultan.getChainInfo();
+        log('Got chain info', 'success');
+        showResult('balance-result', info, 'success');
+      } catch (err) {
+        log(`Failed: ${err.message}`, 'error');
+        showResult('balance-result', err.message, 'error');
+      }
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      if (typeof window.sultan === 'undefined') {
+        console.log('[TestDApp] Sultan not available, cannot setup listeners');
+        return;
+      }
+      
+      console.log('[TestDApp] Setting up event listeners');
+      
+      window.sultan.on('connect', (data) => {
+        console.log('[TestDApp] Connect event received:', data);
+        log(`Event: connect - ${data?.address}`, 'event');
+        isConnected = true;
+        connectedAddress = data?.address;
+        render();
+      });
+
+      window.sultan.on('disconnect', () => {
+        console.log('[TestDApp] Disconnect event received');
+        log('Event: disconnect', 'event');
+        isConnected = false;
+        connectedAddress = null;
+        render();
+      });
+
+      window.sultan.on('accountChange', (data) => {
+        console.log('[TestDApp] Account change event received:', data);
+        log(`Event: accountChange - ${data.address}`, 'event');
+        connectedAddress = data.address;
+        render();
+      });
+
+      window.sultan.on('networkChange', (data) => {
+        console.log('[TestDApp] Network change event received:', data);
+        log(`Event: networkChange - ${data.chainId}`, 'event');
+      });
+      
+      console.log('[TestDApp] Event listeners registered');
+    }
+
+    // Check initial connection state
+    async function checkConnection() {
+      if (typeof window.sultan === 'undefined') return;
+      
+      try {
+        // Use checkConnection to query background for existing connection
+        const result = await window.sultan.checkConnection();
+        if (result && result.connected) {
+          isConnected = true;
+          connectedAddress = result.address;
+          log('Restored connection: ' + result.address, 'success');
+        }
+      } catch (err) {
+        // Not connected or extension not available
+      }
+      render();
+    }
+
+    // Initialize
+    function init() {
+      render();
+      setupEventListeners();
+      
+      // Wait for provider to be injected
+      if (typeof window.sultan === 'undefined') {
+        let attempts = 0;
+        const checkInterval = setInterval(() => {
+          attempts++;
+          if (typeof window.sultan !== 'undefined') {
+            clearInterval(checkInterval);
+            log('Sultan Wallet detected!', 'success');
+            setupEventListeners();
+            checkConnection();
+          } else if (attempts > 20) {
+            clearInterval(checkInterval);
+          }
+        }, 250);
+      } else {
+        checkConnection();
+      }
+    }
+
+    // Start
+    init();
+  </script>
+</body>
+</html>

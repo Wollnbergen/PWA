@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Screenshot 2 - Send</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1280px;
+      height: 800px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 80px;
+    }
+    .phone-frame {
+      width: 360px;
+      height: 600px;
+      background: #0a0a0a;
+      border-radius: 20px;
+      border: 3px solid #333;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212, 175, 55, 0.1);
+      position: relative;
+    }
+    .phone-frame::before {
+      content: 'Send screen here';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #444;
+      font-size: 14px;
+    }
+    .text-side {
+      color: white;
+      max-width: 420px;
+    }
+    h1 {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .highlight {
+      color: #d4af37;
+    }
+    p {
+      font-size: 20px;
+      color: #a3a3a3;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .benefit-list {
+      list-style: none;
+    }
+    .benefit-list li {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 18px;
+      color: #e5e5e5;
+    }
+    .check {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #d4af37, #b8960c);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="phone-frame"></div>
+    <div class="text-side">
+      <h1>Send Crypto <span class="highlight">Instantly</span></h1>
+      <p>Transfer SLTN to anyone in the world. No gas fees, no waiting.</p>
+      <ul class="benefit-list">
+        <li><span class="check">✓</span> Zero transaction fees</li>
+        <li><span class="check">✓</span> Confirm in under 1 second</li>
+        <li><span class="check">✓</span> Simple address input</li>
+        <li><span class="check">✓</span> Transaction history</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

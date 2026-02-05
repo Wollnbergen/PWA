@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Screenshot 4 - Security</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1280px;
+      height: 800px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 80px;
+    }
+    .phone-frame {
+      width: 360px;
+      height: 600px;
+      background: #0a0a0a;
+      border-radius: 20px;
+      border: 3px solid #333;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212, 175, 55, 0.1);
+      position: relative;
+    }
+    .phone-frame::before {
+      content: 'Settings screen here';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #444;
+      font-size: 14px;
+    }
+    .text-side {
+      color: white;
+      max-width: 420px;
+    }
+    h1 {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .highlight {
+      color: #d4af37;
+    }
+    p {
+      font-size: 20px;
+      color: #a3a3a3;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .security-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .security-item {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .security-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .security-label {
+      font-size: 14px;
+      color: #e5e5e5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="phone-frame"></div>
+    <div class="text-side">
+      <h1><span class="highlight">Security</span> First</h1>
+      <p>Your keys, your crypto. Non-custodial wallet with bank-grade encryption.</p>
+      <div class="security-grid">
+        <div class="security-item">
+          <div class="security-icon">🔐</div>
+          <div class="security-label">AES-256 Encryption</div>
+        </div>
+        <div class="security-item">
+          <div class="security-icon">📱</div>
+          <div class="security-label">Optional 2FA</div>
+        </div>
+        <div class="security-item">
+          <div class="security-icon">🔒</div>
+          <div class="security-label">PIN Protected</div>
+        </div>
+        <div class="security-item">
+          <div class="security-icon">🚫</div>
+          <div class="security-label">No Tracking</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

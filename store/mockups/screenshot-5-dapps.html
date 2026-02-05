@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Screenshot 5 - dApp Connect</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1280px;
+      height: 800px;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 80px;
+    }
+    .text-side {
+      color: white;
+      max-width: 420px;
+    }
+    h1 {
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 20px;
+    }
+    .highlight {
+      color: #d4af37;
+    }
+    p {
+      font-size: 20px;
+      color: #a3a3a3;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+    .dapp-logos {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .dapp-logo {
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+    .connect-flow {
+      background: rgba(212, 175, 55, 0.1);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 16px;
+      padding: 25px;
+    }
+    .flow-step {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      color: #e5e5e5;
+    }
+    .flow-step:last-child {
+      margin-bottom: 0;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      background: #d4af37;
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .phone-frame {
+      width: 360px;
+      height: 600px;
+      background: #0a0a0a;
+      border-radius: 20px;
+      border: 3px solid #333;
+      overflow: hidden;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5), 0 0 60px rgba(212, 175, 55, 0.1);
+      position: relative;
+    }
+    .phone-frame::before {
+      content: 'dApp approval here';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #444;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-side">
+      <h1>Connect to <span class="highlight">dApps</span></h1>
+      <p>Seamlessly interact with DeFi, NFTs, and web3 applications on Sultan L1.</p>
+      <div class="dapp-logos">
+        <div class="dapp-logo">🔄</div>
+        <div class="dapp-logo">🖼️</div>
+        <div class="dapp-logo">💎</div>
+        <div class="dapp-logo">🎮</div>
+      </div>
+      <div class="connect-flow">
+        <div class="flow-step">
+          <span class="step-num">1</span>
+          <span>dApp requests connection</span>
+        </div>
+        <div class="flow-step">
+          <span class="step-num">2</span>
+          <span>Review & approve in popup</span>
+        </div>
+        <div class="flow-step">
+          <span class="step-num">3</span>
+          <span>Sign transactions securely</span>
+        </div>
+      </div>
+    </div>
+    <div class="phone-frame"></div>
+  </div>
+</body>
+</html>

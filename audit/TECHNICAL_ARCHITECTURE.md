@@ -733,10 +733,24 @@ npm run build
 
 ### 9.2 Deployment Configuration
 
-**Platform**: Replit Static Deployment  
+**Platform**: Replit Static Deployment (via Wollnbergen/PWA repo)  
 **URL**: `https://wallet.sltn.io`  
+**Backup**: `https://rpc.sltn.io/wallet/` (NYC validator)  
 **Build Command**: `npm run build`  
 **Output Directory**: `dist/`
+
+**Deployment Workflow:**
+```
+wallet-extension/ (0xv7 repo)
+       ↓ sync
+Wollnbergen/PWA repo
+       ↓ git pull
+Replit project
+       ↓ npm run build  
+wallet.sltn.io (production)
+```
+
+**Deploy Script**: `./scripts/deploy_wallet.sh --push`
 
 ```typescript
 // vite.config.ts

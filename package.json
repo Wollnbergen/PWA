@@ -1,15 +1,22 @@
 {
   "name": "sultan-wallet",
   "version": "1.0.0",
-  "description": "Sultan Wallet - Zero-fee blockchain PWA",
+  "description": "Sultan Wallet - Zero-fee blockchain wallet and browser extension",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:extension": "tsc -b && vite build --config vite.config.extension.ts",
+    "build:all": "npm run build && npm run build:extension",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "dev:client": "vite dev --port 5000"
+    "verify:parity": "node scripts/verify-parity.mjs",
+    "precommit": "npm run verify:parity && npm run test",
+    "dev:client": "vite dev --port 5000",
+    "package:chrome": "npm run build:extension && cd dist-extension && zip -r ../sultan-wallet-chrome.zip .",
+    "package:firefox": "npm run build:extension && cd dist-extension-firefox && zip -r ../sultan-wallet-firefox.zip .",
+    "package:all": "npm run package:chrome && npm run package:firefox"
   },
   "dependencies": {
     "@noble/ed25519": "^2.2.3",
@@ -26,6 +33,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fast-json-stable-stringify": "^2.1.0",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.562.0",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
@@ -40,6 +48,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
+    "@types/chrome": "^0.1.32",
     "@types/node": "^25.0.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.18",

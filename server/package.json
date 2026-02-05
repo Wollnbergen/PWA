@@ -1,0 +1,25 @@
+{
+  "name": "sultan-walletlink-relay",
+  "version": "1.0.0",
+  "description": "WebSocket relay server for Sultan WalletLink",
+  "main": "relay-server.js",
+  "scripts": {
+    "start": "node dist/relay-server.js",
+    "dev": "npx ts-node relay-server.ts",
+    "build": "tsc",
+    "docker:build": "docker build -t sultan-walletlink-relay .",
+    "docker:run": "docker run -p 8765:8765 sultan-walletlink-relay"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
