@@ -12,6 +12,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useStakingInfo, useBalance } from '../hooks/useBalance';
 import { sultanAPI, Proposal, VoteOption, ProposalType } from '../api/sultanAPI';
 import { SultanWallet } from '../core/wallet';
+import { validateAmount } from '../core/security';
 import './Governance.css';
 
 // Minimum deposit required (1,000 SLTN in base units)
@@ -117,7 +118,8 @@ export default function Governance() {
   const [telegramUrl, setTelegramUrl] = useState('');
 
   const votingPower = SultanWallet.formatSLTN(stakingData?.staked || '0');
-  const availableBalance = Number(SultanWallet.formatSLTN(balanceData?.available || '0').replace(/,/g, '')) || 0;
+  const availableBalance = SultanWallet.formatSLTN(balanceData?.available || '0');
+  const availableBalanceRaw = SultanWallet.formatSLTNRaw(balanceData?.available || '0');
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -231,8 +233,10 @@ export default function Governance() {
       setError(`Minimum deposit is ${MIN_DEPOSIT} SLTN`);
       return;
     }
-    if (deposit > availableBalance) {
-      setError(`Insufficient balance. You have ${availableBalance.toFixed(2)} SLTN`);
+    // Use validateAmount with raw balance for epsilon-safe comparison
+    const depositValidation = validateAmount(depositAmount, availableBalanceRaw);
+    if (!depositValidation.valid) {
+      setError(depositValidation.error || 'Insufficient balance');
       return;
     }
 
@@ -399,7 +403,7 @@ export default function Governance() {
                 disabled={isSubmitting}
               />
               <span className="field-hint">
-                Minimum: {MIN_DEPOSIT} SLTN • Available: {availableBalance.toFixed(2)} SLTN
+                Minimum: {MIN_DEPOSIT} SLTN • Available: {availableBalance} SLTN
               </span>
             </div>
 

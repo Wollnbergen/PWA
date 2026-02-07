@@ -231,7 +231,17 @@ async function restApi<T>(
           await sleep(delay);
           continue;
         }
-        throw new Error(`API error: ${response.status}`);
+        // Try to get detailed error message from response body
+        let errorMessage = `API error: ${response.status}`;
+        try {
+          const errorJson = await response.json();
+          if (errorJson && errorJson.error) {
+            errorMessage = errorJson.error;
+          }
+        } catch {
+          // If we can't parse the error body, use the status code
+        }
+        throw new Error(errorMessage);
       }
 
       const json = await response.json();

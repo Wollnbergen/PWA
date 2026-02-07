@@ -14,6 +14,7 @@ import { SultanWallet } from '../core/wallet';
 import { sultanAPI } from '../api/sultanAPI';
 import { validateSultanOnlyAddress, validateAmount, verifySessionPin, isHighValueTransaction, HIGH_VALUE_THRESHOLD_SLTN } from '../core/security';
 import './Send.css';
+import '../components/PinInput.css';
 
 // Premium SVG Icons
 const BackIcon = () => (
@@ -88,10 +89,13 @@ export default function Send() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  // Formatted for display (with commas)
   const availableBalance = SultanWallet.formatSLTN(balanceData?.available || '0');
+  // Raw for form input (no commas)
+  const availableBalanceRaw = SultanWallet.formatSLTNRaw(balanceData?.available || '0');
 
   const handleMaxClick = () => {
-    setAmount(availableBalance);
+    setAmount(availableBalanceRaw);
   };
 
   const validateForm = (): boolean => {
@@ -104,8 +108,8 @@ export default function Send() {
       return false;
     }
 
-    // Validate amount
-    const amountValidation = validateAmount(amount, availableBalance);
+    // Validate amount (use raw balance for consistent comparison)
+    const amountValidation = validateAmount(amount, availableBalanceRaw);
     if (!amountValidation.valid) {
       setError(amountValidation.error || 'Invalid amount');
       return false;
@@ -370,7 +374,7 @@ export default function Send() {
             </div>
           )}
 
-          <div className="pin-input-group">
+          <div className="pin-input">
             {pin.map((digit, index) => (
               <input
                 key={index}
@@ -381,7 +385,7 @@ export default function Send() {
                 value={digit}
                 onChange={(e) => handlePinChange(index, e.target.value)}
                 onKeyDown={(e) => handlePinKeyDown(index, e)}
-                className="pin-input"
+                className="pin-digit"
                 autoComplete="off"
               />
             ))}

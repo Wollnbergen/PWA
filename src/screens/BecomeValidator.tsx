@@ -13,6 +13,7 @@ import { SultanWallet } from '../core/wallet';
 import { sultanAPI } from '../api/sultanAPI';
 import { validateAddress, validateAmount, verifySessionPin, validateMoniker } from '../core/security';
 import './BecomeValidator.css';
+import '../components/PinInput.css';
 
 // --- Icons ---
 
@@ -99,7 +100,10 @@ export default function BecomeValidator() {
   };
 
   const availableBalance = SultanWallet.formatSLTN(balanceData?.available || '0');
-  const hasMinimumStake = parseFloat(availableBalance) >= 10000;
+  const availableBalanceRaw = SultanWallet.formatSLTNRaw(balanceData?.available || '0');
+  // Use raw balance (no commas) for numeric comparison
+  const parsedBalance = parseFloat(availableBalanceRaw) || 0;
+  const hasMinimumStake = parsedBalance >= 9999.999;
 
   const handleCopyCommand = async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -127,7 +131,7 @@ export default function BecomeValidator() {
     }
 
     const amount = '10000';
-    const amountValidation = validateAmount(amount, availableBalance);
+    const amountValidation = validateAmount(amount, availableBalanceRaw);
     if (!amountValidation.valid) {
       setError(amountValidation.error || 'Insufficient balance');
       return;
@@ -450,7 +454,7 @@ curl -L https://wallet.sltn.io/install.sh | bash
               </div>
             </div>
 
-            <div className="pin-input-group" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
+            <div className="pin-input">
               {pin.map((digit, index) => (
                 <input
                   key={index}
@@ -461,18 +465,8 @@ curl -L https://wallet.sltn.io/install.sh | bash
                   value={digit}
                   onChange={(e) => handlePinChange(index, e.target.value)}
                   onKeyDown={(e) => handlePinKeyDown(index, e)}
-                  className="pin-input"
+                  className="pin-digit"
                   autoComplete="off"
-                  style={{
-                    width: '44px',
-                    height: '52px',
-                    textAlign: 'center',
-                    fontSize: '24px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--input-bg)',
-                    color: 'var(--text-primary)',
-                  }}
                 />
               ))}
             </div>

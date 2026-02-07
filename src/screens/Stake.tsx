@@ -13,6 +13,7 @@ import { SultanWallet } from '../core/wallet';
 import { sultanAPI, Validator } from '../api/sultanAPI';
 import { validateAmount, verifySessionPin, isHighValueTransaction, HIGH_VALUE_THRESHOLD_SLTN } from '../core/security';
 import './Stake.css';
+import '../components/PinInput.css';
 
 // Premium SVG Icons
 const BackIcon = () => (
@@ -95,9 +96,13 @@ export default function Stake() {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
+  // Formatted for display (with commas)
   const availableBalance = SultanWallet.formatSLTN(balanceData?.available || '0');
   const stakedBalance = SultanWallet.formatSLTN(stakingData?.staked || '0');
   const pendingRewards = SultanWallet.formatSLTN(stakingData?.pendingRewards || '0');
+  // Raw for form input (no commas)
+  const availableBalanceRaw = SultanWallet.formatSLTNRaw(balanceData?.available || '0');
+  const stakedBalanceRaw = SultanWallet.formatSLTNRaw(stakingData?.staked || '0');
 
   useEffect(() => {
     if (validators && validators.length > 0 && !selectedValidator) {
@@ -144,7 +149,7 @@ export default function Stake() {
   const handleStake = () => {
     if (!wallet || !currentAccount || !selectedValidator) return;
 
-    const amountValidation = validateAmount(amount, availableBalance);
+    const amountValidation = validateAmount(amount, availableBalanceRaw);
     if (!amountValidation.valid) {
       setError(amountValidation.error || 'Invalid amount');
       return;
@@ -178,7 +183,7 @@ export default function Stake() {
   const handleUnstake = () => {
     if (!wallet || !currentAccount) return;
 
-    const amountValidation = validateAmount(amount, stakedBalance);
+    const amountValidation = validateAmount(amount, stakedBalanceRaw);
     if (!amountValidation.valid) {
       setError(amountValidation.error || 'Invalid amount');
       return;
@@ -431,7 +436,7 @@ export default function Stake() {
             </div>
           )}
 
-          <div className="pin-inputs" style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
+          <div className="pin-input">
             {pin.map((digit, index) => (
               <input
                 key={index}
@@ -442,17 +447,7 @@ export default function Stake() {
                 value={digit}
                 onChange={e => handlePinChange(index, e.target.value)}
                 onKeyDown={e => handlePinKeyDown(index, e)}
-                className="pin-input"
-                style={{
-                  width: '48px',
-                  height: '56px',
-                  textAlign: 'center',
-                  fontSize: '24px',
-                  borderRadius: '12px',
-                  border: '2px solid var(--color-border)',
-                  background: 'var(--color-bg-secondary)',
-                  color: 'var(--color-text-primary)',
-                }}
+                className="pin-digit"
                 autoComplete="off"
               />
             ))}
@@ -460,22 +455,22 @@ export default function Stake() {
 
           {error && <p className="text-error mb-md">{error}</p>}
 
-          <button
-            className="btn btn-primary"
-            onClick={handlePinSubmit}
-            disabled={isLoading || pin.join('').length !== 6}
-            style={{ width: '100%', maxWidth: '300px' }}
-          >
-            {isLoading ? 'Processing...' : 'Confirm'}
-          </button>
-
-          <button
-            className="btn btn-secondary mt-md"
-            onClick={handleCancelPin}
-            style={{ width: '100%', maxWidth: '300px' }}
-          >
-            Cancel
-          </button>
+          <div className="button-row" style={{ justifyContent: 'center', maxWidth: '300px', margin: '24px auto 0' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleCancelPin}
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={handlePinSubmit}
+              disabled={isLoading || pin.join('').length !== 6}
+            >
+              {isLoading ? 'Processing...' : 'Confirm'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -571,7 +566,7 @@ export default function Stake() {
                 />
                 <button 
                   className="max-btn" 
-                  onClick={() => setAmount(tab === 'stake' ? availableBalance : stakedBalance)}
+                  onClick={() => setAmount(tab === 'stake' ? availableBalanceRaw : stakedBalanceRaw)}
                 >
                   MAX
                 </button>

@@ -320,3 +320,13 @@
 [data-theme="light"] .validator-cta-card .cta-btn:hover {
   background: rgba(0, 212, 170, 0.2);
 }
+
+/* Button row for PIN confirmation */
+.button-row {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.button-row .btn {
+  flex: 1;
+}
