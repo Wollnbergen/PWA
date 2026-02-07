@@ -91,6 +91,13 @@ export class SultanWallet {
   }
 
   /**
+   * Static format helper without comma separators (for form inputs)
+   */
+  static formatSLTNRaw(baseUnits: bigint | string | number): string {
+    return formatSLTNRaw(baseUnits);
+  }
+
+  /**
    * Static parse helper
    */
   static parseSLTN(displayUnits: string): string {
@@ -465,6 +472,28 @@ export function formatSLTN(baseUnits: bigint | string | number): string {
   
   // Add comma separators to integer part
   const intStr = intPart.toLocaleString('en-US');
+  
+  if (fracPart === 0n) {
+    return intStr;
+  }
+  
+  const fracStr = fracPart.toString().padStart(SULTAN_DECIMALS, '0');
+  const trimmed = fracStr.replace(/0+$/, '');
+  return `${intStr}.${trimmed}`;
+}
+
+/**
+ * Format base units to display units (9 decimals) WITHOUT comma separators
+ * Use this for form input values where commas would break parsing
+ */
+export function formatSLTNRaw(baseUnits: bigint | string | number): string {
+  const value = BigInt(baseUnits);
+  const divisor = BigInt(10 ** SULTAN_DECIMALS);
+  const intPart = value / divisor;
+  const fracPart = value % divisor;
+  
+  // No comma separators - raw number string
+  const intStr = intPart.toString();
   
   if (fracPart === 0n) {
     return intStr;

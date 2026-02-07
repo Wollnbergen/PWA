@@ -740,15 +740,18 @@ export function validateAmount(
     return { valid: false, error: 'Amount is required' };
   }
   
-  // Check format
+  // Strip commas from both values (handles locale-formatted numbers)
+  const cleanAmount = amount.replace(/,/g, '');
+  const cleanAvailable = available.replace(/,/g, '');
+  
+  // Check format (after stripping commas)
   const amountRegex = new RegExp(`^\\d+(\\.\\d{1,${decimals}})?$`);
-  if (!amountRegex.test(amount)) {
+  if (!amountRegex.test(cleanAmount)) {
     return { valid: false, error: 'Invalid amount format' };
   }
   
-  const amountNum = parseFloat(amount);
-  // Strip commas from formatted balance (e.g., "500,000,000" -> "500000000")
-  const availableNum = parseFloat(available.replace(/,/g, ''));
+  const amountNum = parseFloat(cleanAmount);
+  const availableNum = parseFloat(cleanAvailable);
   
   if (isNaN(amountNum) || amountNum <= 0) {
     return { valid: false, error: 'Amount must be greater than 0' };

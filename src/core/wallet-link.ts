@@ -30,10 +30,9 @@ import {
 } from './walletlink-crypto';
 
 // Relay server URLs
-// Primary: Fly.io deployment (always works)
-// Fallback: Custom domain (relay.sltn.io)
+// Primary: Fly.io deployment
+// Fallback: Custom domain via relay.sltn.io CNAME pointing to the same
 const RELAY_URL = 'wss://sultan-walletlink-relay.fly.dev';
-const RELAY_URL_CUSTOM = 'wss://relay.sltn.io';
 const RELAY_URL_DEV = 'wss://localhost:8765';
 
 // Session storage key for persistence
