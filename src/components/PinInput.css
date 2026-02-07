@@ -1,43 +1,65 @@
+/* ================================================
+   Premium Sultan PIN Input - Browser Extension
+   ================================================ */
+
+/* Container Layout */
 .pin-input {
   display: flex;
   justify-content: center;
-  gap: var(--spacing-sm);
-  margin: 0 auto; /* Ensure centering */
-  max-width: 100%;
+  gap: 12px; /* Optimized gap for 6-digit flow in extension */
+  margin: 0 auto;
+  width: 100%;
 }
 
+/* Individual Box Container */
+.pin-digit-container {
+  display: flex;
+  align-items: center;
+}
+
+/* The Digit Input Box */
 .pin-digit {
-  width: 48px;
-  height: 56px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 1.5rem;
+  width: 40px;
+  height: 48px;
+  
+  /* Colors & Borders */
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px;
+  background: rgba(26, 31, 46, 0.8) !important; /* Sultan Navy */
+  color: #ffffff;
+  
+  /* Text Styling */
+  font-size: 1.25rem;
   font-weight: 600;
   text-align: center;
+  
+  /* Interactivity */
   outline: none;
-  transition: all var(--transition);
-  caret-color: transparent;
+  transition: all 0.2s ease;
+  caret-color: transparent; /* Hide the flashing cursor */
 }
 
+/* Focus State: The Sultan Teal Glow */
 .pin-digit:focus {
-  border-color: var(--accent-primary);
-  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+  border-color: #00ffff !important; /* Sultan Teal */
+  box-shadow: 0 0 0 3px rgba(0, 255, 255, 0.2) !important; /* Teal outer glow */
+  background: rgba(0, 255, 255, 0.05) !important; /* Very subtle teal tint */
 }
 
+/* Filled State */
 .pin-digit:not(:placeholder-shown) {
-  background: var(--bg-primary);
+  background: rgba(26, 31, 46, 0.9) !important;
 }
 
-@media (max-width: 360px) {
+/* Smaller extension popups (< 320px) */
+@media (max-width: 320px) {
   .pin-digit {
-    width: 40px;
-    height: 48px;
-    font-size: 1.25rem;
+    width: 36px;
+    height: 44px;
+    font-size: 1.1rem;
   }
   
   .pin-input {
-    gap: var(--spacing-xs);
+    gap: 8px;
   }
 }

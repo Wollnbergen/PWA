@@ -376,18 +376,19 @@ export default function Send() {
 
           <div className="pin-input">
             {pin.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => { pinInputRefs.current[index] = el; }}
-                type="password"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handlePinChange(index, e.target.value)}
-                onKeyDown={(e) => handlePinKeyDown(index, e)}
-                className="pin-digit"
-                autoComplete="off"
-              />
+              <div key={index} className="pin-digit-container">
+                <input
+                  ref={(el) => { pinInputRefs.current[index] = el; }}
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handlePinChange(index, e.target.value)}
+                  onKeyDown={(e) => handlePinKeyDown(index, e)}
+                  className="pin-digit"
+                  autoComplete="off"
+                />
+              </div>
             ))}
           </div>
 
