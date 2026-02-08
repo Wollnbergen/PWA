@@ -95,6 +95,7 @@ export default function Send() {
   const availableBalanceRaw = SultanWallet.formatSLTNRaw(balanceData?.available || '0');
 
   const handleMaxClick = () => {
+    console.log('[Send] MAX clicked, setting amount to:', availableBalanceRaw, 'from balance:', balanceData?.available);
     setAmount(availableBalanceRaw);
   };
 
@@ -109,8 +110,10 @@ export default function Send() {
     }
 
     // Validate amount (use raw balance for consistent comparison)
+    console.log('[Send] Validating amount:', amount, 'against available:', availableBalanceRaw);
     const amountValidation = validateAmount(amount, availableBalanceRaw);
     if (!amountValidation.valid) {
+      console.log('[Send] Validation failed:', amountValidation.error);
       setError(amountValidation.error || 'Invalid amount');
       return false;
     }
@@ -471,7 +474,7 @@ export default function Send() {
               step="0.000000001"
               min="0"
             />
-            <button className="max-btn" onClick={handleMaxClick}>
+            <button type="button" className="max-btn" onClick={handleMaxClick}>
               MAX
             </button>
           </div>

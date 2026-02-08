@@ -754,13 +754,21 @@ export function validateAmount(
   const amountNum = parseFloat(cleanAmount);
   const availableNum = parseFloat(cleanAvailable);
   
+  console.log('[validateAmount] amount:', cleanAmount, '→', amountNum, 'available:', cleanAvailable, '→', availableNum);
+  
   if (isNaN(amountNum) || amountNum <= 0) {
     return { valid: false, error: 'Amount must be greater than 0' };
+  }
+  
+  if (isNaN(availableNum)) {
+    console.error('[validateAmount] Available balance is NaN! Raw:', cleanAvailable);
+    return { valid: false, error: 'Balance not loaded' };
   }
   
   // Use epsilon for floating point comparison (1 nanoSLTN = 0.000000001)
   const epsilon = 0.000000001;
   if (amountNum > availableNum + epsilon) {
+    console.log('[validateAmount] Insufficient:', amountNum, '>', availableNum + epsilon);
     return { valid: false, error: 'Insufficient balance' };
   }
   
