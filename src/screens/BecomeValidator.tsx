@@ -379,7 +379,7 @@ curl -L https://wallet.sltn.io/install.sh | bash
               <input 
                 type="text" 
                 className="input" 
-                placeholder="sltn1..."
+                placeholder="sultan1..."
                 value={validatorAddress}
                 onChange={(e) => setValidatorAddress(e.target.value)}
               />
@@ -398,7 +398,7 @@ curl -L https://wallet.sltn.io/install.sh | bash
 
             <button 
               className="btn btn-primary btn-full"
-              disabled={!validatorAddress.startsWith('sltn1')} 
+              disabled={!validatorAddress.startsWith('sultan1')} 
               onClick={() => setStep('fund')}
             >
               Continue
