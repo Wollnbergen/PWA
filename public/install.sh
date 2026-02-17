@@ -1,6 +1,6 @@
 #!/bin/bash
 # Sultan Validator One-Line Installer v0.2.7
-# Usage: curl -L https://wallet.sltn.io/install.sh | bash
+# Usage: curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
 #
 # ═══════════════════════════════════════════════════════════════════════════
 # COMPLETE VALIDATOR SETUP GUIDE
@@ -24,7 +24,7 @@
 #
 # STEP 3: SSH INTO YOUR SERVER AND RUN THIS SCRIPT
 #   ssh root@your-server-ip
-#   curl -L https://wallet.sltn.io/install.sh | bash
+#   curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
 #   → Enter your wallet address when prompted
 #
 # STEP 4: FUND YOUR WALLET

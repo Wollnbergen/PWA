@@ -363,9 +363,9 @@ export default function BecomeValidator() {
             
             <div className="code-block">
               <pre>
-curl -L https://wallet.sltn.io/install.sh | bash
+curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
               </pre>
-              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh | bash')}>
+              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh')}>
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
             </div>
