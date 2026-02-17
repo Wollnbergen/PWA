@@ -336,14 +336,6 @@ export default function Stake() {
   const myValidator = validators?.find(v => v.address === currentAccount?.address);
   const myStake = myValidator ? SultanWallet.formatSLTN(myValidator.totalStaked) : '0';
 
-  // Debug logging for validator matching
-  console.log('[Stake] Validators loaded:', validators?.length);
-  console.log('[Stake] Current account:', currentAccount?.address);
-  console.log('[Stake] isValidator:', isValidator);
-  if (validators && validators.length > 0) {
-    console.log('[Stake] First few validator addresses:', validators.slice(0, 3).map(v => v.address));
-  }
-
   /**
    * Request PIN verification before exiting as validator
    */
@@ -426,8 +418,10 @@ export default function Stake() {
         </header>
 
         <div className="stake-content fade-in" style={{ textAlign: 'center', paddingTop: '60px' }}>
-          <LockIcon />
-          <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>Enter PIN to {pendingAction}</h3>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <LockIcon />
+          </div>
+          <h3 style={{ marginTop: '0', marginBottom: '8px' }}>Enter PIN to {pendingAction === 'exit-validator' ? 'exit' : pendingAction}</h3>
           <p className="text-muted" style={{ marginBottom: '16px' }}>
             {pendingAction === 'stake' && `Stake ${amount} SLTN with validator`}
             {pendingAction === 'unstake' && `Unstake ${amount} SLTN (21-day unbonding)`}
