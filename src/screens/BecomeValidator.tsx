@@ -237,7 +237,7 @@ export default function BecomeValidator() {
         validator_address: currentAccount.address,
         moniker: monikerValue,
         initial_stake: atomicAmount,
-        commission_rate: 10, // 10% default commission
+        commission_rate: 0.10, // 10% as decimal (0.10 = 10%)
         nonce: currentNonce,
         timestamp,
       };
@@ -252,7 +252,7 @@ export default function BecomeValidator() {
         validatorAddress: currentAccount.address,
         moniker: monikerValue,
         initialStake: atomicAmount,
-        commissionRate: 10,
+        commissionRate: 0.10, // 10% as decimal
         signature,
         publicKey: currentAccount.publicKey,
       });
