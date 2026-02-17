@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
+import { useWallet } from '../hooks/useWallet';
 
 interface ConnectionRequest {
   sessionData: string;
@@ -26,10 +27,11 @@ interface ConnectionRequest {
 export function DeepLinkConnect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { connectFromQR, disconnect } = useWalletLink();
+  const { connectFromQR, disconnect, sendConnectionApproval } = useWalletLink();
+  const { currentAccount } = useWallet();
   
   const [request, setRequest] = useState<ConnectionRequest | null>(null);
-  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error'>('parsing');
+  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error' | 'approving'>('parsing');
   const [error, setError] = useState<string | null>(null);
 
   // Parse session from URL on mount
@@ -88,16 +90,33 @@ export function DeepLinkConnect() {
 
   // Handle connection approval
   const handleApprove = async () => {
-    // Connection is already established when status is 'connected'
-    // Just redirect back to dApp
-    setTimeout(() => {
-      if (request?.returnUrl) {
-        window.location.href = request.returnUrl;
-      } else {
-        // Stay in wallet if no return URL
-        navigate('/dashboard');
-      }
-    }, 500);
+    if (!currentAccount) {
+      setError('No wallet account available');
+      setStatus('error');
+      return;
+    }
+
+    setStatus('approving');
+    
+    try {
+      // Send approval with wallet address to dApp via relay
+      await sendConnectionApproval(
+        currentAccount.address,
+        currentAccount.publicKey || ''
+      );
+      
+      // Brief delay then redirect
+      setTimeout(() => {
+        if (request?.returnUrl) {
+          window.location.href = request.returnUrl;
+        } else {
+          navigate('/dashboard');
+        }
+      }, 500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to send approval');
+      setStatus('error');
+    }
   };
 
   // Handle rejection
@@ -129,8 +148,11 @@ export function DeepLinkConnect() {
     );
   }
 
-  // Connecting state
-  if (status === 'connecting' || status === 'parsing') {
+  // Connecting or approving state
+  if (status === 'connecting' || status === 'parsing' || status === 'approving') {
+    const message = status === 'approving' 
+      ? 'Sending approval...' 
+      : 'Establishing secure connection with ' + (request?.dappName || 'dApp');
     return (
       <div className="screen-container" style={{ 
         padding: '24px', 
@@ -142,9 +164,9 @@ export function DeepLinkConnect() {
         minHeight: '100vh'
       }}>
         <div className="spinner" style={{ marginBottom: '24px' }} />
-        <h2 style={{ margin: '0 0 8px' }}>Connecting...</h2>
+        <h2 style={{ margin: '0 0 8px' }}>{status === 'approving' ? 'Approving...' : 'Connecting...'}</h2>
         <p style={{ color: '#666' }}>
-          Establishing secure connection with {request?.dappName || 'dApp'}
+          {message}
         </p>
       </div>
     );

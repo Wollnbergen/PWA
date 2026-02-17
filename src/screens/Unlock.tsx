@@ -35,7 +35,11 @@ const LockIcon = () => (
 
 type UnlockStep = 'pin' | 'totp';
 
-export default function Unlock() {
+interface UnlockProps {
+  onUnlock?: () => void;
+}
+
+export default function Unlock({ onUnlock }: UnlockProps) {
   const navigate = useNavigate();
   const { unlock, lock, error, clearError } = useWallet();
   
@@ -58,9 +62,15 @@ export default function Unlock() {
 
   /**
    * Navigate to appropriate screen after successful unlock
-   * Checks for pending deep link connection first, then pending approvals
+   * Checks for pending approvals first, or calls onUnlock callback
    */
   const navigateAfterUnlock = async () => {
+    // If there's a custom onUnlock handler (e.g., for deep link), call it
+    if (onUnlock) {
+      onUnlock();
+      return;
+    }
+    
     // Check for pending deep link connection
     const pendingConnect = sessionStorage.getItem('sultan_pending_connect');
     if (pendingConnect) {

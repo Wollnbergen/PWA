@@ -393,6 +393,35 @@ export class WalletLinkClient {
   }
 
   /**
+   * Send connection approval directly (for deep link flow)
+   * Used when wallet is opened via deep link and user approves
+   */
+  async sendConnectionApproval(address: string, publicKey: string): Promise<void> {
+    if (!this.session || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('Not connected to relay');
+    }
+
+    const message: RelayMessage = {
+      type: MessageType.CONNECT_RESPONSE,
+      sessionId: this.session.sessionId,
+      payload: {
+        approved: true,
+        address,
+        publicKey,
+      },
+      timestamp: Date.now(),
+    };
+
+    const encrypted = await this.encrypt(JSON.stringify(message));
+    this.ws.send(encrypted);
+    
+    // Mark session as connected
+    this.session.isConnected = true;
+    this.session.peerAddress = address;
+    this.persistSession();
+  }
+
+  /**
    * Send response back to dApp via relay
    */
   private async sendResponse(type: MessageType, payload: any): Promise<void> {
