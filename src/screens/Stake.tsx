@@ -608,8 +608,8 @@ export default function Stake() {
                 className="input"
                 placeholder="🔍 Search validators by name or address..."
                 onChange={(e) => {
-                  const search = e.target.value.toLowerCase();
-                  // Filter is handled by UI filter below
+                  // Search logic removed to fix build error
+                  e.target.value.toLowerCase();
                 }}
               />
               <p className="search-hint">

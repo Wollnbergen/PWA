@@ -36,39 +36,8 @@ vi.mock('../api/sultanAPI', () => ({
   },
 }));
 
-const mockNFTResponse = {
-  collections: [
-    {
-      address: 'sultan1nftcontract123',
-      name: 'Sultan Genesis',
-      symbol: 'SGEN',
-      nfts: [
-        {
-          tokenId: '1',
-          contractAddress: 'sultan1nftcontract123',
-          name: 'Sultan #1',
-          description: 'The first Sultan NFT',
-          image: 'https://example.com/nft1.png',
-          collection: 'Sultan Genesis',
-          attributes: [
-            { trait_type: 'Rarity', value: 'Legendary' },
-          ],
-        },
-        {
-          tokenId: '42',
-          contractAddress: 'sultan1nftcontract123',
-          name: 'Sultan #42',
-          description: 'A rare Sultan NFT',
-          image: 'https://example.com/nft42.png',
-          collection: 'Sultan Genesis',
-          attributes: [
-            { trait_type: 'Rarity', value: 'Epic' },
-          ],
-        },
-      ],
-    },
-  ],
-};
+// Unused variable removed
+// const mockNFTResponse = ...
 
 const renderNFTs = () => {
   return render(
