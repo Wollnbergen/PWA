@@ -79,16 +79,9 @@ export default function BecomeValidator() {
   const { data: balanceData, refetch: refetchBalance } = useBalance(currentAccount?.address);
   
   const [step, setStep] = useState<Step>('overview');
-  // In v0.2.7, validator address = user's own wallet address
-  const [validatorAddress, setValidatorAddress] = useState(currentAccount?.address || '');
+  // Validator address is the SERVER's address from install.sh output
+  const [validatorAddress, setValidatorAddress] = useState('');
   const [moniker, setMoniker] = useState('');
-  
-  // Auto-update validator address when account changes
-  React.useEffect(() => {
-    if (currentAccount?.address) {
-      setValidatorAddress(currentAccount.address);
-    }
-  }, [currentAccount?.address]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -391,21 +384,20 @@ curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
 
         {step === 'address' && (
           <div className="step-section">
-            <h3>2. Register as Validator</h3>
-            <p className="text-muted">Your wallet address will be registered as a validator:</p>
+            <h3>2. Enter Server Address</h3>
+            <p className="text-muted">Paste the Validator Address shown by install.sh:</p>
             
             <div className="input-group">
-              <label>Validator Address (your wallet)</label>
+              <label>Server Validator Address</label>
               <input 
                 type="text" 
                 className="input" 
-                placeholder="sultan1..."
+                placeholder="sultan1ad260f08d244e7ea859f664c04d58aee3"
                 value={validatorAddress}
-                disabled
-                style={{ opacity: 0.7, cursor: 'not-allowed' }}
+                onChange={(e) => setValidatorAddress(e.target.value)}
               />
-              <p className="input-hint" style={{ color: 'var(--accent-primary)', marginTop: '4px' }}>
-                ✓ This is your wallet address - you control the keys
+              <p className="input-hint" style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
+                Copy from server terminal: "Validator Address: sultan1..."
               </p>
             </div>
 
