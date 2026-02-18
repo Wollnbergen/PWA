@@ -4,7 +4,7 @@
  * Premium flow for setting up a validator node.
  */
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useTheme } from '../hooks/useTheme';
@@ -79,8 +79,16 @@ export default function BecomeValidator() {
   const { data: balanceData, refetch: refetchBalance } = useBalance(currentAccount?.address);
   
   const [step, setStep] = useState<Step>('overview');
-  const [validatorAddress, setValidatorAddress] = useState('');
+  // In v0.2.7, validator address = user's own wallet address
+  const [validatorAddress, setValidatorAddress] = useState(currentAccount?.address || '');
   const [moniker, setMoniker] = useState('');
+  
+  // Auto-update validator address when account changes
+  React.useEffect(() => {
+    if (currentAccount?.address) {
+      setValidatorAddress(currentAccount.address);
+    }
+  }, [currentAccount?.address]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -202,53 +210,62 @@ export default function BecomeValidator() {
   };
 
   /**
-   * Execute fund validator after PIN verification
+   * Execute create validator after PIN verification
+   * In v0.2.7: validator address = user's own wallet address
    */
   const executeFundValidator = async () => {
-    if (!wallet || !currentAccount) return;
+    if (!wallet || !currentAccount) {
+      setError('Wallet not available. Please unlock your wallet and try again.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      console.log('[BecomeValidator] Starting registration for:', currentAccount.address);
       // Fixed 10,000 SLTN stake for validator
       const stakeAmount = '10000';
       const atomicAmount = SultanWallet.parseSLTN(stakeAmount);
+      const monikerValue = moniker.trim() || 'Sultan Validator';
       
       // Fetch current nonce from blockchain BEFORE signing
       const currentNonce = await sultanAPI.getNonce(currentAccount.address);
       const timestamp = Date.now();
-      const memo = `validator:${moniker.trim() || 'Sultan Validator'}`;
       
-      // IMPORTANT: Sign EXACTLY the fields the node expects for verification
-      // Node reconstructs: {"amount":"...","from":"...","memo":"...","nonce":...,"timestamp":...,"to":"..."}
+      // For create_validator, the validator_address is the user's OWN address
       const txData = {
-        amount: atomicAmount,
-        from: currentAccount.address,
-        memo,
+        type: 'create_validator',
+        validator_address: currentAccount.address,
+        moniker: monikerValue,
+        initial_stake: atomicAmount,
+        commission_rate: 0.10, // 10% as decimal (0.10 = 10%)
         nonce: currentNonce,
         timestamp,
-        to: validatorAddress,
       };
 
+      console.log('[BecomeValidator] Signing transaction with index:', currentAccount.index);
       const signature = await wallet.signTransaction(txData, currentAccount.index);
+      console.log('[BecomeValidator] Signature obtained, calling createValidator API');
+      console.log('[BecomeValidator] PublicKey:', currentAccount.publicKey);
       
-      await sultanAPI.broadcastTransaction({
-        from: currentAccount.address,
-        to: validatorAddress,
-        amount: atomicAmount,
-        memo,
-        nonce: currentNonce,
-        timestamp,
+      // Call create_validator API endpoint
+      await sultanAPI.createValidator({
+        validatorAddress: currentAccount.address,
+        moniker: monikerValue,
+        initialStake: atomicAmount,
+        commissionRate: 0.10, // 10% as decimal
         signature,
         publicKey: currentAccount.publicKey,
       });
 
-      setSuccess(`🎉 Validator funded! Auto-registration in progress.`);
+      setSuccess(`🎉 Congratulations! You are now a Sultan validator!`);
       refetchBalance();
       
       setTimeout(() => {
         navigate('/stake');
       }, 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fund validator');
+      console.error('[BecomeValidator] Registration failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to register validator');
     } finally {
       setIsLoading(false);
     }
@@ -257,8 +274,8 @@ export default function BecomeValidator() {
   const steps = [
     { id: 'overview', label: 'Start' },
     { id: 'server', label: 'Setup Server' },
-    { id: 'address', label: 'Link Address' },
-    { id: 'fund', label: 'Fund' },
+    { id: 'address', label: 'Configure' },
+    { id: 'fund', label: 'Register' },
     { id: 'pin', label: 'Confirm' }
   ];
 
@@ -355,9 +372,9 @@ export default function BecomeValidator() {
             
             <div className="code-block">
               <pre>
-curl -L https://wallet.sltn.io/install.sh | bash
+curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
               </pre>
-              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh | bash')}>
+              <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh')}>
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
             </div>
@@ -374,26 +391,30 @@ curl -L https://wallet.sltn.io/install.sh | bash
 
         {step === 'address' && (
           <div className="step-section">
-            <h3>2. Link Validator</h3>
-            <p className="text-muted">Enter the address generated by your node:</p>
+            <h3>2. Register as Validator</h3>
+            <p className="text-muted">Your wallet address will be registered as a validator:</p>
             
             <div className="input-group">
-              <label>Validator Address</label>
+              <label>Validator Address (your wallet)</label>
               <input 
                 type="text" 
                 className="input" 
                 placeholder="sultan1..."
                 value={validatorAddress}
-                onChange={(e) => setValidatorAddress(e.target.value)}
+                disabled
+                style={{ opacity: 0.7, cursor: 'not-allowed' }}
               />
+              <p className="input-hint" style={{ color: 'var(--accent-primary)', marginTop: '4px' }}>
+                ✓ This is your wallet address - you control the keys
+              </p>
             </div>
 
             <div className="input-group">
-              <label>Moniker (Name)</label>
+              <label>Validator Name (Moniker)</label>
               <input 
                 type="text" 
                 className="input" 
-                placeholder="My Node"
+                placeholder="My Validator"
                 value={moniker}
                 onChange={(e) => setMoniker(e.target.value)}
               />
@@ -411,17 +432,25 @@ curl -L https://wallet.sltn.io/install.sh | bash
 
         {step === 'fund' && (
           <div className="step-section">
-            <h3>3. Fund Validator</h3>
-            <p className="text-muted">Send the initial stake to activate your node.</p>
+            <h3>3. Confirm Registration</h3>
+            <p className="text-muted">Stake 10,000 SLTN to become a validator.</p>
 
             <div className="summary-card">
               <div className="summary-row">
-                <span>To Validator</span>
-                <span className="mono">{validatorAddress.slice(0, 10)}...</span>
+                <span>Your Validator Address</span>
+                <span className="mono">{validatorAddress.slice(0, 12)}...{validatorAddress.slice(-6)}</span>
+              </div>
+              <div className="summary-row">
+                <span>Validator Name</span>
+                <span>{moniker || 'Sultan Validator'}</span>
               </div>
               <div className="summary-row highlight">
-                <span>Amount</span>
+                <span>Stake Amount</span>
                 <span>10,000 SLTN</span>
+              </div>
+              <div className="summary-row">
+                <span>Commission</span>
+                <span>10%</span>
               </div>
             </div>
 
@@ -433,58 +462,57 @@ curl -L https://wallet.sltn.io/install.sh | bash
               disabled={isLoading}
               onClick={handleFundValidator}
             >
-              {isLoading ? 'Processing...' : 'Fund & Activate Node'}
+              {isLoading ? 'Processing...' : 'Register as Validator'}
             </button>
           </div>
         )}
 
         {/* PIN Verification Step - SECURITY: Required before signing */}
         {step === 'pin' && (
-          <div className="step-section pin-confirmation-section">
-            <div className="pin-header">
-              <div className="lock-icon-container">
+          <div className="step-section">
+            <div className="pin-header" style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ margin: '0 auto 16px', width: '48px', height: '48px' }}>
                 <LockIcon />
               </div>
               <h3>Confirm with PIN</h3>
               <p className="text-muted">Enter your 6-digit PIN to authorize this transaction</p>
             </div>
 
-            <div className="summary-card">
+            <div className="summary-card" style={{ marginBottom: '24px' }}>
               <div className="summary-row">
-                <span className="label">To Validator</span>
-                <span className="value mono">{validatorAddress.slice(0, 10)}...</span>
+                <span>To Validator</span>
+                <span className="mono">{validatorAddress.slice(0, 10)}...</span>
               </div>
               <div className="summary-row highlight">
-                <span className="label">Amount</span>
-                <span className="value">10,000 SLTN</span>
+                <span>Amount</span>
+                <span>10,000 SLTN</span>
               </div>
             </div>
 
-            <div className="pin-input-group">
-              <div className="pin-input">
-                {pin.map((digit, index) => (
-                  <div key={index} className="pin-digit-container">
-                    <input
-                      ref={(el) => { pinInputRefs.current[index] = el; }}
-                      type="password"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handlePinChange(index, e.target.value)}
-                      onKeyDown={(e) => handlePinKeyDown(index, e)}
-                      className="pin-digit"
-                      autoComplete="off"
-                    />
-                  </div>
-                ))}
-              </div>
+            <div className="pin-input">
+              {pin.map((digit, index) => (
+                <div key={index} className="pin-digit-container">
+                  <input
+                    ref={(el) => { pinInputRefs.current[index] = el; }}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handlePinChange(index, e.target.value)}
+                    onKeyDown={(e) => handlePinKeyDown(index, e)}
+                    className="pin-digit"
+                    autoComplete="off"
+                  />
+                </div>
+              ))}
             </div>
 
-            {error && <p className="text-error" style={{ textAlign: 'center', marginTop: '16px' }}>{error}</p>}
+            {error && <p className="text-error" style={{ textAlign: 'center' }}>{error}</p>}
 
-            <div className="pin-actions">
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <button 
                 className="btn btn-secondary"
+                style={{ flex: 1 }}
                 onClick={() => {
                   setStep('fund');
                   setPin(['', '', '', '', '', '']);
@@ -496,6 +524,7 @@ curl -L https://wallet.sltn.io/install.sh | bash
               </button>
               <button 
                 className="btn btn-primary"
+                style={{ flex: 1 }}
                 onClick={handlePinSubmit}
                 disabled={isLoading || pin.some(d => !d)}
               >
