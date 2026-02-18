@@ -178,7 +178,6 @@ export default function Governance() {
         proposalId: selectedProposal.id,
         address: currentAccount.address,
         option,
-        votingPower: stakingData?.staked || '0',
         signature,
         publicKey: currentAccount.publicKey,
       });
@@ -263,12 +262,10 @@ export default function Governance() {
         address: currentAccount.address,
         title: proposalTitle,
         description: proposalDescription,
-        proposalType,
+        type: proposalType,
         deposit: SultanWallet.parseSLTN(deposit.toString()),
         signature,
         publicKey: currentAccount.publicKey,
-        telegramDiscussionUrl: telegramUrl.trim() || undefined,
-        discordDiscussionUrl: discordUrl.trim() || undefined,
       });
 
       setSubmitSuccess(`Proposal submitted successfully! Hash: ${result.hash.slice(0, 8)}...`);

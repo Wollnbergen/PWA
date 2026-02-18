@@ -973,6 +973,7 @@ export const sultanAPI = {
   submitProposal,
   vote,
   getNonce,
+  broadcastTransaction,
   stake: async (req: StakeRequest): Promise<{ hash: string }> => {
     // Fetch current nonce for proper transaction ordering
     const balance = await getBalance(req.delegatorAddress);
