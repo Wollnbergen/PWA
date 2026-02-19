@@ -211,6 +211,7 @@ export class WalletLinkClient {
 
   /**
    * Send join session message to relay
+   * NOTE: First message must be plaintext so relay can route by sessionId
    */
   private async sendJoinSession(): Promise<void> {
     if (!this.session || !this.ws) return;
@@ -222,8 +223,8 @@ export class WalletLinkClient {
       timestamp: Date.now(),
     };
 
-    const encrypted = await this.encrypt(JSON.stringify(message));
-    this.ws.send(encrypted);
+    // Send as plaintext JSON so relay can see sessionId for routing
+    this.ws.send(JSON.stringify(message));
   }
 
   /**
@@ -738,6 +739,7 @@ export class WalletLinkSessionGenerator {
 
   /**
    * Send session init message to relay
+   * NOTE: First message must be plaintext so relay can route by sessionId
    */
   private async sendInitSession(): Promise<void> {
     if (!this.session || !this.ws) return;
@@ -749,8 +751,8 @@ export class WalletLinkSessionGenerator {
       timestamp: Date.now(),
     };
 
-    const encrypted = await this.encrypt(JSON.stringify(message));
-    this.ws.send(encrypted);
+    // Send as plaintext JSON so relay can see sessionId for routing
+    this.ws.send(JSON.stringify(message));
   }
 
   /**
