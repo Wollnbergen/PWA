@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, X, Check, AlertTriangle, Globe, FileText, ArrowRightLeft, Coins, Star } from 'lucide-react';
+import { X, Check, AlertTriangle, Globe, FileText, ArrowRightLeft, Coins, Star } from 'lucide-react';
 import { useWallet } from '../hooks/useWallet';
 import { broadcastTransaction } from '../api/sultanAPI';
 import {
@@ -286,17 +286,6 @@ export function ApprovalScreen() {
 
   return (
     <div className="approval-screen">
-      {/* Header */}
-      <header className="approval-header">
-        <Shield className="shield-icon" />
-        <span className="header-title">Sultan Wallet</span>
-        {approvals.length > 1 && (
-          <span className="approval-count">
-            {currentIndex + 1} of {approvals.length}
-          </span>
-        )}
-      </header>
-
       {/* Phishing Warning */}
       {Boolean((current.data as Record<string, unknown>)?.phishingWarning) && (
         <div className="phishing-warning">

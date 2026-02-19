@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
-import { AlertCircle, Link, Globe, Shield, Check } from 'lucide-react';
+import { AlertCircle, Link, Globe, Check } from 'lucide-react';
 import '../styles/approval.css';
 
 interface ConnectionRequest {
@@ -138,11 +138,6 @@ export function DeepLinkConnect() {
   if (status === 'connected' || searchParams.get('test') === 'approve') {
     return (
       <div className="approval-screen">
-        <header className="approval-header">
-          <Shield className="shield-icon" />
-          <span className="header-title">Sultan Wallet</span>
-        </header>
-
         <div className="request-card">
           <div className="type-icon connect">
             <Link size={32} />
