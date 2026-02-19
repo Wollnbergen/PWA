@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
+import { useWallet } from '../hooks/useWallet';
 
 interface ConnectionRequest {
   sessionData: string;
@@ -26,7 +27,8 @@ interface ConnectionRequest {
 export function DeepLinkConnect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { connectFromQR, disconnect } = useWalletLink();
+  const { connectFromQR, disconnect, sendConnectionApproval } = useWalletLink();
+  const { currentAccount, isUnlocked } = useWallet();
   
   const [request, setRequest] = useState<ConnectionRequest | null>(null);
   const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error'>('parsing');
@@ -88,16 +90,31 @@ export function DeepLinkConnect() {
 
   // Handle connection approval
   const handleApprove = async () => {
-    // Connection is already established when status is 'connected'
-    // Just redirect back to dApp
-    setTimeout(() => {
-      if (request?.returnUrl) {
-        window.location.href = request.returnUrl;
-      } else {
-        // Stay in wallet if no return URL
-        navigate('/dashboard');
-      }
-    }, 500);
+    if (!currentAccount) {
+      setError('No wallet account available');
+      setStatus('error');
+      return;
+    }
+
+    try {
+      // Send connection approval with wallet address and public key to dApp
+      await sendConnectionApproval(currentAccount.address, currentAccount.publicKey);
+      console.log('[DeepLinkConnect] Sent approval for:', currentAccount.address);
+      
+      // Redirect back to dApp after short delay
+      setTimeout(() => {
+        if (request?.returnUrl) {
+          window.location.href = request.returnUrl;
+        } else {
+          // Stay in wallet if no return URL
+          navigate('/dashboard');
+        }
+      }, 500);
+    } catch (e) {
+      console.error('[DeepLinkConnect] Failed to send approval:', e);
+      setError('Failed to send approval to dApp');
+      setStatus('error');
+    }
   };
 
   // Handle rejection

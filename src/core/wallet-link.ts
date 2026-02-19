@@ -471,6 +471,34 @@ export class WalletLinkClient {
   }
 
   /**
+   * Send connection approval to dApp with wallet address and public key
+   * Called when user approves a deep link connection
+   */
+  async sendConnectionApproval(address: string, publicKey: string): Promise<void> {
+    if (!this.session || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      console.error('[WalletLink] Cannot send approval - not connected to relay');
+      throw new Error('Not connected to relay');
+    }
+
+    console.log('[WalletLink] Sending connection approval for:', address);
+
+    const message: RelayMessage = {
+      type: MessageType.CONNECT_RESPONSE,
+      sessionId: this.session.sessionId,
+      payload: {
+        approved: true,
+        address,
+        publicKey,
+      },
+      timestamp: Date.now(),
+    };
+
+    const encrypted = await this.encrypt(JSON.stringify(message));
+    this.ws.send(encrypted);
+    console.log('[WalletLink] Connection approval sent');
+  }
+
+  /**
    * Start heartbeat to keep connection alive
    */
   private startHeartbeat(): void {
