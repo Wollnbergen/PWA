@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
-import { AlertCircle, Link, Globe, Check } from 'lucide-react';
+import { AlertCircle, Globe, Check } from 'lucide-react';
 import '../styles/approval.css';
 
 interface ConnectionRequest {
@@ -140,7 +140,7 @@ export function DeepLinkConnect() {
       <div className="approval-screen">
         <div className="request-card">
           <div className="type-icon connect">
-            <Link size={32} />
+            <Globe size={32} />
           </div>
           <h2 className="request-title">Connection Request</h2>
           <p className="request-description">
@@ -150,7 +150,7 @@ export function DeepLinkConnect() {
 
         <div className="origin-card">
           <div className="origin-favicon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
-            <Globe size={24} />
+            <div style={{ fontSize: '24px' }}>🌐</div>
           </div>
           <div className="origin-info">
             <span className="origin-name">{request?.dappName || 'HODL Holdings'}</span>
