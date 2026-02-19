@@ -115,8 +115,10 @@ export class WalletLinkClient {
    * QR contains: sultan://wl?s=<sessionId>&k=<base64Key>&b=<bridgeUrl>
    */
   async connectFromQR(qrData: string): Promise<boolean> {
+    console.log('[WalletLink] Raw QR data:', qrData);
     try {
       const parsed = this.parseQRData(qrData);
+      console.log('[WalletLink] Parsed session:', parsed);
       if (!parsed) {
         throw new Error('Invalid QR code format');
       }
@@ -224,6 +226,7 @@ export class WalletLinkClient {
     };
 
     // Send as plaintext JSON so relay can see sessionId for routing
+    console.log('[WalletLink] Sending join message:', message);
     this.ws.send(JSON.stringify(message));
   }
 
