@@ -158,9 +158,7 @@ export default function Welcome() {
           </div>
 
           <div className="footer-badge">
-            <span>v1.6.8</span>
-            <span className="separator">•</span>
-            <span>Sultan Labs</span>
+            <span>v1.6.8 • Sultan Labs</span>
           </div>
         </div>
       </div>
