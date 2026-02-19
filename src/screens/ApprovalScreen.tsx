@@ -258,8 +258,23 @@ export function ApprovalScreen() {
 
   const getTypeDescription = () => {
     switch (current.type) {
-      case 'connect':
-        return 'This site wants to connect to your Sultan Wallet';
+    case 'connect':
+      return (
+        <div className="permissions-list">
+          <div className="permission-item">
+            <Check size={16} className="text-success" />
+            <span>View your wallet address</span>
+          </div>
+          <div className="permission-item">
+            <Check size={16} className="text-success" />
+            <span>Request transaction signatures</span>
+          </div>
+          <div className="permission-item">
+            <Check size={16} className="text-success" />
+            <span>Request message signatures</span>
+          </div>
+        </div>
+      );
       case 'signMessage':
         return 'This site wants you to sign a message';
       case 'signTransaction':
