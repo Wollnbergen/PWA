@@ -15,7 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
-import { AlertCircle, Globe, Check } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import '../styles/approval.css';
 
 interface ConnectionRequest {
@@ -139,39 +139,30 @@ export function DeepLinkConnect() {
     return (
       <div className="approval-screen">
         <div className="request-card">
-          <div className="type-icon connect">
-            <Globe size={32} />
-          </div>
           <h2 className="request-title">Connection Request</h2>
           <p className="request-description">
             A dApp wants to connect to your wallet
           </p>
         </div>
 
-        <div className="origin-card">
-          <div className="origin-favicon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
-            <div style={{ fontSize: '24px' }}>🌐</div>
-          </div>
-          <div className="origin-info">
-            <span className="origin-name">{request?.dappName || 'HODL Holdings'}</span>
+        <div className="origin-card" style={{ flexDirection: 'column', textAlign: 'center', gap: '8px' }}>
+          <div className="origin-info" style={{ alignItems: 'center', width: '100%' }}>
+            <span className="origin-name" style={{ fontSize: '1.25rem' }}>{request?.dappName || 'HODL Holdings'}</span>
             <span className="origin-url">{request?.dappOrigin || 'https://hodlholdings.com'}</span>
           </div>
         </div>
 
-        <div className="permissions-list">
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '8px', color: 'var(--color-text)' }}>
+        <div className="permissions-list" style={{ textAlign: 'center' }}>
+          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '16px', color: 'var(--color-text)' }}>
             This dApp will be able to:
           </p>
-          <div className="permission-item">
-            <Check size={16} className="text-success" />
+          <div className="permission-item" style={{ justifyContent: 'center' }}>
             <span>View your wallet address</span>
           </div>
-          <div className="permission-item">
-            <Check size={16} className="text-success" />
+          <div className="permission-item" style={{ justifyContent: 'center' }}>
             <span>Request transaction signatures</span>
           </div>
-          <div className="permission-item">
-            <Check size={16} className="text-success" />
+          <div className="permission-item" style={{ justifyContent: 'center' }}>
             <span>Request message signatures</span>
           </div>
         </div>
