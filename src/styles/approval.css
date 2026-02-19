@@ -1,16 +1,19 @@
 .approval-screen {
   min-height: 100vh;
-  background: transparent;
+  background: var(--bg-gradient) !important;
+  background-attachment: fixed !important;
   color: var(--color-text);
   padding: 80px var(--spacing-lg) 40px;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
-  max-width: 1000px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   width: 100%;
   position: relative;
   z-index: 2;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
@@ -103,6 +106,23 @@
   border-radius: var(--radius-lg);
   margin-bottom: var(--spacing-md);
   box-shadow: var(--glass-shadow);
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.permissions-list,
+.warning-banner,
+.request-card {
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.request-card {
+  padding: var(--spacing-lg) 0;
 }
 
 .origin-favicon {

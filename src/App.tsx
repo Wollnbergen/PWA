@@ -130,7 +130,6 @@ function App() {
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
           <div className="app-container">
-            <BackgroundAnimation />
             <ApprovalScreen />
           </div>
         } 
@@ -139,7 +138,6 @@ function App() {
         path="/connected-apps" 
         element={isInitialized && !isLocked ? (
           <div className="app-container">
-            <BackgroundAnimation />
             <ConnectedAppsScreen />
           </div>
         ) : <Navigate to="/" replace />} 
@@ -159,7 +157,6 @@ function App() {
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
           <div className="app-container">
-            <BackgroundAnimation />
             <DeepLinkConnect />
           </div>
         } 
@@ -169,7 +166,6 @@ function App() {
         path="/test-approval" 
         element={
           <div className="app-container">
-            <BackgroundAnimation />
             <ApprovalScreen />
           </div>
         } 
@@ -178,7 +174,6 @@ function App() {
         path="/test-connect" 
         element={
           <div className="app-container">
-            <BackgroundAnimation />
             <DeepLinkConnect />
           </div>
         } 
