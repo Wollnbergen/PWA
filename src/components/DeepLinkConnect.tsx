@@ -124,7 +124,7 @@ export function DeepLinkConnect() {
 
         <div className="approval-actions" style={{ marginTop: '24px' }}>
           <button 
-            className="btn btn-primary"
+            className="btn btn-approve"
             onClick={() => navigate('/dashboard')}
           >
             Return to Wallet
@@ -188,13 +188,13 @@ export function DeepLinkConnect() {
 
         <div className="approval-actions">
           <button
-            className="btn btn-secondary"
+            className="btn btn-reject"
             onClick={handleReject}
           >
             Reject
           </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-approve"
             onClick={handleApprove}
           >
             Connect

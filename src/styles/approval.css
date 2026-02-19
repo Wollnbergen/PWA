@@ -314,25 +314,26 @@
   border: none;
 }
 
-.btn-approve, .btn-reject {
-  display: none !important;
+.btn-reject {
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.2) !important;
+  color: var(--color-error);
 }
 
-.approval-actions .btn-primary {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-accent)) !important;
-  color: #000000 !important;
+.btn-reject:hover {
+  background: rgba(255, 68, 68, 0.2);
+  transform: translateY(-2px);
+}
+
+.btn-approve {
+  background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+  color: #000;
+}
+
+.btn-approve:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
   box-shadow: var(--glow-primary);
-}
-
-.approval-actions .btn-primary:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
-}
-
-.approval-actions .btn-secondary {
-  background: var(--color-secondary) !important;
-  color: var(--color-text) !important;
 }
 
 .btn:disabled {

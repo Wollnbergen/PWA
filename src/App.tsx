@@ -130,7 +130,7 @@ function App() {
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <ApprovalScreen />
           </div>
         } 
@@ -139,7 +139,7 @@ function App() {
         path="/connected-apps" 
         element={isInitialized && !isLocked ? (
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <ConnectedAppsScreen />
           </div>
         ) : <Navigate to="/" replace />} 
@@ -148,7 +148,7 @@ function App() {
         path="/walletlink" 
         element={isInitialized && !isLocked ? (
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <WalletLinkScreen />
           </div>
         ) : <Navigate to="/" replace />} 
@@ -159,7 +159,7 @@ function App() {
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <DeepLinkConnect />
           </div>
         } 
@@ -169,7 +169,7 @@ function App() {
         path="/test-approval" 
         element={
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <ApprovalScreen />
           </div>
         } 
@@ -178,7 +178,7 @@ function App() {
         path="/test-connect" 
         element={
           <div className="app-container">
-            <BackgroundAnimation showLines={false} />
+            <BackgroundAnimation />
             <DeepLinkConnect />
           </div>
         } 
