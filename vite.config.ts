@@ -2,14 +2,31 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
+import fs from "fs";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { VitePWA } from "vite-plugin-pwa";
+
+// Plugin to copy index.html to 200.html for Replit SPA routing
+function replitSpaPlugin() {
+  return {
+    name: 'replit-spa',
+    closeBundle() {
+      const indexPath = path.resolve(process.cwd(), 'dist/index.html');
+      const fallbackPath = path.resolve(process.cwd(), 'dist/200.html');
+      if (fs.existsSync(indexPath)) {
+        fs.copyFileSync(indexPath, fallbackPath);
+        console.log('Created 200.html for Replit SPA routing');
+      }
+    }
+  };
+}
 
 export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
     tailwindcss(),
+    replitSpaPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'favicon-light.png', 'favicon-dark.png', 'apple-touch-icon.png', 'masked-icon.svg'],
