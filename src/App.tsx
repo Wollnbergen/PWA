@@ -21,6 +21,7 @@ import { ApprovalScreen } from './screens/ApprovalScreen';
 import { ConnectedAppsScreen } from './screens/ConnectedAppsScreen';
 import { WalletLinkScreen } from './components/WalletLinkScreen';
 import { DeepLinkConnect } from './components/DeepLinkConnect';
+import BackgroundAnimation from './components/BackgroundAnimation';
 
 function App() {
   const { isInitialized, isLocked, isLoading } = useWallet();
@@ -128,33 +129,59 @@ function App() {
         element={
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
-          <ApprovalScreen />
+          <div className="app-container">
+            <BackgroundAnimation />
+            <ApprovalScreen />
+          </div>
         } 
       />
       <Route 
         path="/connected-apps" 
-        element={isInitialized && !isLocked ? <ConnectedAppsScreen /> : <Navigate to="/" replace />} 
+        element={isInitialized && !isLocked ? (
+          <div className="app-container">
+            <BackgroundAnimation />
+            <ConnectedAppsScreen />
+          </div>
+        ) : <Navigate to="/" replace />} 
       />
       <Route 
         path="/walletlink" 
-        element={isInitialized && !isLocked ? <WalletLinkScreen /> : <Navigate to="/" replace />} 
+        element={isInitialized && !isLocked ? (
+          <div className="app-container">
+            <BackgroundAnimation />
+            <WalletLinkScreen />
+          </div>
+        ) : <Navigate to="/" replace />} 
       />
       <Route 
         path="/connect" 
         element={
           !isInitialized ? <Navigate to="/" replace /> :
           isLocked ? <Navigate to="/unlock" replace /> :
-          <DeepLinkConnect />
+          <div className="app-container">
+            <BackgroundAnimation />
+            <DeepLinkConnect />
+          </div>
         } 
       />
       
       <Route 
         path="/test-approval" 
-        element={<ApprovalScreen />} 
+        element={
+          <div className="app-container">
+            <BackgroundAnimation />
+            <ApprovalScreen />
+          </div>
+        } 
       />
       <Route 
         path="/test-connect" 
-        element={<DeepLinkConnect />} 
+        element={
+          <div className="app-container">
+            <BackgroundAnimation />
+            <DeepLinkConnect />
+          </div>
+        } 
       />
       
       {/* Fallback */}

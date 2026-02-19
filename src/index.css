@@ -190,22 +190,30 @@ button:active,
   margin: 0; 
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background: transparent;
   position: relative;
   z-index: 10;
 }
 
-/* Background gradient for the whole screen on desktop */
+.app-container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 html {
   background: var(--bg-gradient) !important;
   background-attachment: fixed !important;
   background-size: cover !important;
   background-position: center !important;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
   margin: 0;
   padding: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
@@ -218,7 +226,7 @@ body {
   overflow-y: auto; 
   display: flex;
   justify-content: center;
-  align-items: flex-start; /* Back to top-aligned for better scroll feel */
+  align-items: flex-start;
 }
 
 #root {
