@@ -225,8 +225,8 @@ export class WalletLinkClient {
         reject(error);
       };
 
-      this.ws.onclose = () => {
-        console.log('[WalletLink] WebSocket closed');
+      this.ws.onclose = (event) => {
+        console.log('[WalletLink] WebSocket closed — code:', event.code, 'reason:', event.reason || '(none)', 'wasClean:', event.wasClean);
         this.stopHeartbeat();
         if (this.session?.isConnected) {
           this.attemptReconnect();
@@ -286,11 +286,14 @@ export class WalletLinkClient {
 
     if (!message) return;
 
+    console.log('[WalletLink] Received message type:', message.type, message.payload ? JSON.stringify(message.payload).substring(0, 100) : '');
+
     try {
       this.updateActivity();
 
       switch (message.type) {
         case MessageType.SESSION_ACK:
+          console.log('[WalletLink] Session acknowledged (wallet side)');
           this.session!.isConnected = true;
           this.emit({ type: 'connected' });
           break;
@@ -308,10 +311,12 @@ export class WalletLinkClient {
           break;
 
         case MessageType.SESSION_END:
+          console.log('[WalletLink] Received session_end from relay');
           this.disconnect();
           break;
 
         case MessageType.ERROR:
+          console.error('[WalletLink] Relay error:', message.payload);
           this.emit({ type: 'error', data: message.payload });
           break;
       }
@@ -525,6 +530,7 @@ export class WalletLinkClient {
    * Disconnect from session
    */
   async disconnect(): Promise<void> {
+    console.log('[WalletLink] disconnect() called', new Error('disconnect trace').stack);
     if (this.ws) {
       if (this.session) {
         // Send session_end as plain JSON (relay needs to parse type)

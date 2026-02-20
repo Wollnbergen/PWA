@@ -15,8 +15,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWalletLink } from '../hooks/useWalletLink';
-import { AlertCircle } from 'lucide-react';
-import '../styles/approval.css';
+import { useWallet } from '../hooks/useWallet';
 
 interface ConnectionRequest {
   sessionData: string;
@@ -28,14 +27,16 @@ interface ConnectionRequest {
 export function DeepLinkConnect() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { connectFromQR, disconnect } = useWalletLink();
+  const { connectFromQR, disconnect, sendConnectionApproval } = useWalletLink();
+  const { currentAccount } = useWallet();
   
   const [request, setRequest] = useState<ConnectionRequest | null>(null);
-  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error'>('parsing');
+  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error' | 'approving'>('parsing');
   const [error, setError] = useState<string | null>(null);
 
   // Parse session from URL on mount
   useEffect(() => {
+    console.log('[DeepLinkConnect] Component mounted, parsing session URL');
     const sessionParam = searchParams.get('session');
     const returnUrl = searchParams.get('return') || document.referrer || null;
     
@@ -50,6 +51,7 @@ export function DeepLinkConnect() {
       const sessionData = decodeURIComponent(sessionParam);
       
       // Parse to extract dApp info if present
+      // Format: sultan://wl?s=<sessionId>&k=<key>&b=<bridgeUrl>&n=<name>&o=<origin>
       const url = new URL(sessionData);
       const dappName = url.searchParams.get('n') || 'Unknown dApp';
       const dappOrigin = url.searchParams.get('o') || 'Unknown origin';
@@ -71,6 +73,7 @@ export function DeepLinkConnect() {
   // Auto-connect when request is parsed
   useEffect(() => {
     if (status === 'connecting' && request?.sessionData) {
+      console.log('[DeepLinkConnect] Status=connecting, calling connectFromQR');
       connectFromQR(request.sessionData)
         .then((success) => {
           if (success) {
@@ -89,18 +92,40 @@ export function DeepLinkConnect() {
 
   // Handle connection approval
   const handleApprove = async () => {
-    setTimeout(() => {
-      if (request?.returnUrl) {
-        window.location.href = request.returnUrl;
-      } else {
-        navigate('/dashboard');
-      }
-    }, 500);
+    if (!currentAccount) {
+      setError('No wallet account available');
+      setStatus('error');
+      return;
+    }
+
+    setStatus('approving');
+    
+    try {
+      // Send approval with wallet address to dApp via relay
+      await sendConnectionApproval(
+        currentAccount.address,
+        currentAccount.publicKey || ''
+      );
+      
+      // Brief delay then redirect
+      setTimeout(() => {
+        if (request?.returnUrl) {
+          window.location.href = request.returnUrl;
+        } else {
+          navigate('/dashboard');
+        }
+      }, 500);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to send approval');
+      setStatus('error');
+    }
   };
 
   // Handle rejection
   const handleReject = () => {
+    // Disconnect the WalletLink session
     disconnect();
+    
     if (request?.returnUrl) {
       window.location.href = request.returnUrl;
     } else {
@@ -109,86 +134,160 @@ export function DeepLinkConnect() {
   };
 
   // Error state
-  if (status === 'error' && searchParams.get('test') !== 'approve') {
+  if (status === 'error') {
     return (
-      <div className="approval-screen">
-        <div className="request-card" style={{ marginTop: '40px' }}>
-          <div className="type-icon" style={{ background: 'rgba(255, 68, 68, 0.1)', color: 'var(--color-error)' }}>
-            <AlertCircle size={32} />
-          </div>
-          <h2 className="request-title">Connection Failed</h2>
-          <p className="request-description" style={{ color: 'var(--color-error)' }}>
-            {error || 'An unexpected error occurred during connection.'}
-          </p>
-        </div>
+      <div className="screen-container" style={{ padding: '24px', textAlign: 'center' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>❌</div>
+        <h2 style={{ margin: '0 0 8px' }}>Connection Failed</h2>
+        <p style={{ color: '#666', marginBottom: '24px' }}>{error}</p>
+        <button 
+          className="btn-primary"
+          onClick={() => navigate('/dashboard')}
+        >
+          Return to Wallet
+        </button>
+      </div>
+    );
+  }
 
-        <div className="approval-actions" style={{ marginTop: '24px' }}>
-          <button 
-            className="btn btn-approve"
-            onClick={() => navigate('/dashboard')}
-          >
-            Return to Wallet
-          </button>
-        </div>
+  // Connecting or approving state
+  if (status === 'connecting' || status === 'parsing' || status === 'approving') {
+    const message = status === 'approving' 
+      ? 'Sending approval...' 
+      : 'Establishing secure connection with ' + (request?.dappName || 'dApp');
+    return (
+      <div className="screen-container" style={{ 
+        padding: '24px', 
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh'
+      }}>
+        <div className="spinner" style={{ marginBottom: '24px' }} />
+        <h2 style={{ margin: '0 0 8px' }}>{status === 'approving' ? 'Approving...' : 'Connecting...'}</h2>
+        <p style={{ color: '#666' }}>
+          {message}
+        </p>
       </div>
     );
   }
 
   // Connected - show approval screen
-  if (status === 'connected' || searchParams.get('test') === 'approve') {
-    return (
-      <div className="approval-screen">
-        <div className="request-card">
-          <h2 className="request-title">Connection Request</h2>
-          <p className="request-description">
-            A dApp wants to connect to your wallet
-          </p>
+  return (
+    <div className="screen-container" style={{ padding: '24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+        <div style={{ 
+          fontSize: '48px', 
+          marginBottom: '16px',
+          animation: 'pulse 2s infinite'
+        }}>
+          🔗
         </div>
+        <h2 style={{ margin: '0 0 8px' }}>Connection Request</h2>
+        <p style={{ color: '#666', margin: 0 }}>
+          A dApp wants to connect to your wallet
+        </p>
+      </div>
 
-        <div className="origin-card" style={{ flexDirection: 'column', textAlign: 'center', gap: '8px' }}>
-          <div className="origin-info" style={{ alignItems: 'center', width: '100%' }}>
-            <span className="origin-name" style={{ fontSize: '1.25rem' }}>{request?.dappName || 'HODL Holdings'}</span>
-            <span className="origin-url">{request?.dappOrigin || 'https://hodlholdings.com'}</span>
+      {/* dApp Info Card */}
+      <div style={{
+        background: 'var(--card-bg, #f5f5f5)',
+        borderRadius: '12px',
+        padding: '20px',
+        marginBottom: '24px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          marginBottom: '16px'
+        }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '24px',
+            marginRight: '16px'
+          }}>
+            🌐
+          </div>
+          <div>
+            <h3 style={{ margin: '0 0 4px', fontSize: '16px' }}>
+              {request?.dappName || 'Unknown dApp'}
+            </h3>
+            <p style={{ 
+              margin: 0, 
+              fontSize: '13px', 
+              color: '#666',
+              wordBreak: 'break-all'
+            }}>
+              {request?.dappOrigin || 'Unknown origin'}
+            </p>
           </div>
         </div>
 
-        <div className="permissions-list" style={{ textAlign: 'center' }}>
-          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '16px', color: 'var(--color-text)' }}>
+        <div style={{ 
+          borderTop: '1px solid var(--border-color, #e0e0e0)',
+          paddingTop: '16px'
+        }}>
+          <p style={{ 
+            margin: '0 0 8px', 
+            fontSize: '14px',
+            fontWeight: 500
+          }}>
             This dApp will be able to:
           </p>
-          <div className="permission-item" style={{ justifyContent: 'center' }}>
-            <span>View your wallet address</span>
-          </div>
-          <div className="permission-item" style={{ justifyContent: 'center' }}>
-            <span>Request transaction signatures</span>
-          </div>
-          <div className="permission-item" style={{ justifyContent: 'center' }}>
-            <span>Request message signatures</span>
-          </div>
-        </div>
-
-        <div className="warning-banner" style={{ marginTop: 'auto' }}>
-          <AlertCircle className="warning-icon" size={20} />
-          <span>Only connect to sites you trust. Never approve transactions you don't understand.</span>
-        </div>
-
-        <div className="approval-actions">
-          <button
-            className="btn btn-reject"
-            onClick={handleReject}
-          >
-            Reject
-          </button>
-          <button
-            className="btn btn-approve"
-            onClick={handleApprove}
-          >
-            Connect
-          </button>
+          <ul style={{ 
+            margin: 0, 
+            padding: '0 0 0 20px',
+            fontSize: '13px',
+            color: '#666'
+          }}>
+            <li>View your wallet address</li>
+            <li>Request transaction signatures</li>
+            <li>Request message signatures</li>
+          </ul>
         </div>
       </div>
-    );
-  }
+
+      {/* Warning */}
+      <div style={{
+        background: 'rgba(255, 193, 7, 0.1)',
+        border: '1px solid rgba(255, 193, 7, 0.3)',
+        borderRadius: '8px',
+        padding: '12px 16px',
+        marginBottom: '24px',
+        fontSize: '13px',
+        color: '#856404'
+      }}>
+        ⚠️ Only connect to sites you trust. Never approve transactions you don't understand.
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '12px' }}>
+        <button
+          className="btn-secondary"
+          style={{ flex: 1 }}
+          onClick={handleReject}
+        >
+          Reject
+        </button>
+        <button
+          className="btn-primary"
+          style={{ flex: 1 }}
+          onClick={handleApprove}
+        >
+          Connect
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default DeepLinkConnect;

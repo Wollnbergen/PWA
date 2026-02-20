@@ -30,6 +30,7 @@ export interface UseWalletLinkReturn {
   connectFromQR: (qrData: string) => Promise<boolean>;
   approveRequest: (requestId: string, response: any) => Promise<void>;
   rejectRequest: (requestId: string, reason?: string) => void;
+  sendConnectionApproval: (address: string, publicKey: string) => Promise<void>;
   disconnect: () => void;
   clearError: () => void;
 }
@@ -89,6 +90,7 @@ export function useWalletLink(): UseWalletLinkReturn {
     clientRef.current.on(handleEvent);
 
     return () => {
+      console.log('[useWalletLink] Cleanup — component unmounting, disconnecting WalletLink');
       clientRef.current?.off(handleEvent);
       clientRef.current?.disconnect();
     };
@@ -136,9 +138,18 @@ export function useWalletLink(): UseWalletLinkReturn {
     setPendingRequests([]);
   }, []);
 
+  const sendConnectionApproval = useCallback(async (address: string, publicKey: string): Promise<void> => {
+    if (!clientRef.current) {
+      throw new Error('WalletLink not initialized');
+    }
+    
+    await clientRef.current.sendConnectionApproval(address, publicKey);
+    setIsConnected(true);
+  }, []);
+
   const clearError = useCallback((): void => {
     setError(null);
-  }, []);
+  }, []);;
 
   return {
     isConnected,
@@ -151,6 +162,7 @@ export function useWalletLink(): UseWalletLinkReturn {
     connectFromQR,
     approveRequest,
     rejectRequest,
+    sendConnectionApproval,
     disconnect,
     clearError,
   };
