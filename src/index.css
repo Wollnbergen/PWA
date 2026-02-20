@@ -327,28 +327,32 @@ body {
 .mt-lg { margin-top: var(--spacing-lg); }
 .mt-xl { margin-top: var(--spacing-xl); }
 
-/* Optimized Animations */
+/* Animation classes */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .fade-in {
-  animation: fadeIn 0.3s linear both;
-  visibility: visible;
-  will-change: opacity, transform;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .scale-in {
-  animation: scaleIn 0.3s linear both;
-  visibility: visible;
-  will-change: opacity, transform;
+  animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .slide-in {
-  animation: slideInRight 0.3s linear both;
-  visibility: visible;
-  will-change: opacity, transform;
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .stagger-1 { animation-delay: 50ms; }

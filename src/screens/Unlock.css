@@ -46,10 +46,8 @@
 }
 
 .sultan-logo-img {
-  transition: filter 0.3s linear;
-  animation: logo-glow-dark 2.5s linear infinite alternate;
-  visibility: visible;
-  will-change: filter;
+  transition: filter 0.3s ease;
+  animation: logo-glow 2.5s infinite alternate;
 }
 
 /* Dark mode: bright cyan/teal glow */
