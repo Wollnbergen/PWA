@@ -47,7 +47,7 @@
 
 .sultan-logo-img {
   transition: filter 0.3s linear;
-  animation: logo-glow 2.5s linear infinite alternate;
+  animation: logo-glow-dark 2.5s linear infinite alternate;
   visibility: visible;
   will-change: filter;
 }
