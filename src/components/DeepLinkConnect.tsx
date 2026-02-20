@@ -31,7 +31,7 @@ export function DeepLinkConnect() {
   const { currentAccount } = useWallet();
   
   const [request, setRequest] = useState<ConnectionRequest | null>(null);
-  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error' | 'approving'>('parsing');
+  const [status, setStatus] = useState<'parsing' | 'connecting' | 'connected' | 'error' | 'approving' | 'approved'>('parsing');
   const [error, setError] = useState<string | null>(null);
 
   // Parse session from URL on mount
@@ -107,14 +107,8 @@ export function DeepLinkConnect() {
         currentAccount.publicKey || ''
       );
       
-      // Brief delay then redirect
-      setTimeout(() => {
-        if (request?.returnUrl) {
-          window.location.href = request.returnUrl;
-        } else {
-          navigate('/dashboard');
-        }
-      }, 500);
+      // Show confirmation screen (stay on wallet.sltn.io)
+      setStatus('approved');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to send approval');
       setStatus('error');
@@ -125,12 +119,8 @@ export function DeepLinkConnect() {
   const handleReject = () => {
     // Disconnect the WalletLink session
     disconnect();
-    
-    if (request?.returnUrl) {
-      window.location.href = request.returnUrl;
-    } else {
-      navigate('/dashboard');
-    }
+    // Stay on wallet — navigate to dashboard
+    navigate('/dashboard');
   };
 
   // Error state
@@ -146,6 +136,77 @@ export function DeepLinkConnect() {
         >
           Return to Wallet
         </button>
+      </div>
+    );
+  }
+
+  // Approved - show confirmation screen
+  if (status === 'approved') {
+    return (
+      <div className="screen-container" style={{
+        padding: '24px',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh'
+      }}>
+        <div style={{
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #00c853, #00e676)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '40px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 20px rgba(0, 200, 83, 0.3)'
+        }}>
+          ✓
+        </div>
+        <h2 style={{ margin: '0 0 8px', fontSize: '22px' }}>Connection Confirmed</h2>
+        <p style={{ color: '#666', margin: '0 0 4px', fontSize: '15px' }}>
+          Your wallet is now connected to
+        </p>
+        <p style={{ 
+          color: 'var(--text-primary, #333)',
+          fontWeight: 600,
+          fontSize: '16px',
+          margin: '0 0 8px'
+        }}>
+          {request?.dappName || 'the dApp'}
+        </p>
+        <p style={{
+          color: '#888',
+          fontSize: '13px',
+          margin: '0 0 32px',
+          wordBreak: 'break-all'
+        }}>
+          {currentAccount?.address
+            ? `${currentAccount.address.slice(0, 12)}...${currentAccount.address.slice(-8)}`
+            : ''}
+        </p>
+        <p style={{ color: '#999', fontSize: '13px', margin: '0 0 24px' }}>
+          You can close this tab and return to {request?.dappName || 'the dApp'}.
+        </p>
+        <div style={{ display: 'flex', gap: '12px', width: '100%', maxWidth: '320px' }}>
+          <button
+            className="btn-secondary"
+            style={{ flex: 1 }}
+            onClick={() => navigate('/dashboard')}
+          >
+            Go to Wallet
+          </button>
+          <button
+            className="btn-primary"
+            style={{ flex: 1 }}
+            onClick={() => window.close()}
+          >
+            Close Tab
+          </button>
+        </div>
       </div>
     );
   }
