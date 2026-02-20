@@ -65,6 +65,7 @@ export interface WalletLinkSession {
   sessionId: string;
   sessionKey: Uint8Array;
   bridgeUrl: string;
+  relayMachineId?: string;
   isConnected: boolean;
   peerAddress?: string;
   createdAt: number;
@@ -127,6 +128,7 @@ export class WalletLinkClient {
         sessionId: parsed.sessionId,
         sessionKey,
         bridgeUrl: parsed.bridgeUrl || (this.isDev ? RELAY_URL_DEV : RELAY_URL),
+        relayMachineId: parsed.machineId,
         isConnected: false,
         createdAt: Date.now(),
         lastActivity: Date.now(),
@@ -148,9 +150,9 @@ export class WalletLinkClient {
   /**
    * Parse QR code data into session parameters
    */
-  private parseQRData(data: string): { sessionId: string; key: string; bridgeUrl?: string } | null {
+  private parseQRData(data: string): { sessionId: string; key: string; bridgeUrl?: string; machineId?: string } | null {
     try {
-      // Format: sultan://wl?s=<sessionId>&k=<key>&b=<bridgeUrl>
+      // Format: sultan://wl?s=<sessionId>&k=<key>&b=<bridgeUrl>&m=<machineId>
       // Also support: https://wallet.sltn.io/connect?session=<encoded-sultan-url>
       
       let sessionData = data;
@@ -182,14 +184,15 @@ export class WalletLinkClient {
       const sessionId = params.get('s');
       const key = params.get('k');
       const bridgeUrl = params.get('b') || undefined;
+      const machineId = params.get('m') || undefined;
 
       if (!sessionId || !key) {
         console.error('[WalletLink] Missing sessionId or key. sessionId:', !!sessionId, 'key:', !!key);
         return null;
       }
 
-      console.log('[WalletLink] Parsed session:', { sessionId: sessionId.substring(0, 8) + '...', hasKey: !!key, bridgeUrl });
-      return { sessionId, key, bridgeUrl };
+      console.log('[WalletLink] Parsed session:', { sessionId: sessionId.substring(0, 8) + '...', hasKey: !!key, bridgeUrl, machineId: machineId || '(none)' });
+      return { sessionId, key, bridgeUrl, machineId };
     } catch (e) {
       console.error('[WalletLink] Parse error:', e);
       return null;
@@ -205,7 +208,12 @@ export class WalletLinkClient {
     }
 
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(this.session!.bridgeUrl);
+      // Append ?machine=<id> for Fly.io multi-instance routing (fly-replay)
+      const wsUrl = this.session!.relayMachineId
+        ? `${this.session!.bridgeUrl}${this.session!.bridgeUrl.includes('?') ? '&' : '?'}machine=${this.session!.relayMachineId}`
+        : this.session!.bridgeUrl;
+      console.log('[WalletLink] Connecting to:', wsUrl);
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = async () => {
         console.log('[WalletLink] WebSocket connected');

@@ -5,11 +5,11 @@
  * This server doesn't decrypt any messages - it just routes encrypted messages
  * between peers in the same session.
  * 
- * Production deployment:
- * - Deploy behind HTTPS/WSS terminator (nginx, cloudflare)
- * - Add rate limiting
- * - Add session cleanup (memory management)
- * - Add metrics/monitoring
+ * Multi-instance support (Fly.io):
+ * - dApp creates session → relay stores in-memory + returns machineId
+ * - Wallet connects with ?machine=<id> query param
+ * - If the machine doesn't match, relay responds with fly-replay header
+ *   so Fly's proxy re-routes the WebSocket upgrade to the correct machine
  * 
  * Run: npx ts-node relay-server.ts
  * Or:  node relay-server.js
@@ -17,6 +17,7 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
+import { URL } from 'url';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
@@ -32,6 +33,9 @@ interface Session {
 // Active sessions
 const sessions = new Map<string, Session>();
 
+// Machine identifier for multi-instance routing (Fly.io sets FLY_MACHINE_ID)
+const MACHINE_ID = process.env.FLY_MACHINE_ID || `local-${Date.now()}`;
+
 // Create HTTP server
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
@@ -39,6 +43,7 @@ const server = http.createServer((req, res) => {
     res.end(JSON.stringify({ 
       status: 'ok', 
       sessions: sessions.size,
+      machineId: MACHINE_ID,
       uptime: process.uptime()
     }));
     return;
@@ -48,10 +53,44 @@ const server = http.createServer((req, res) => {
   res.end('Not found');
 });
 
-// Create WebSocket server
-const wss = new WebSocketServer({ server });
+// Create WebSocket server (noServer mode for manual upgrade handling)
+const wss = new WebSocketServer({ noServer: true });
 
-console.log(`[Relay] Starting WalletLink relay server on port ${PORT}...`);
+console.log(`[Relay] Starting WalletLink relay server on port ${PORT} (machine: ${MACHINE_ID})...`);
+
+/**
+ * Handle HTTP upgrade → WebSocket.
+ * If the URL includes ?machine=<id> and the id doesn't match this instance,
+ * respond with fly-replay header so Fly's proxy routes to the correct machine.
+ */
+server.on('upgrade', (request: http.IncomingMessage, socket: any, head: Buffer) => {
+  try {
+    const reqUrl = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
+    const targetMachine = reqUrl.searchParams.get('machine');
+
+    if (targetMachine && targetMachine !== MACHINE_ID) {
+      // This connection should go to a different machine — tell Fly to replay
+      console.log(`[Relay] fly-replay: connection wants machine ${targetMachine}, we are ${MACHINE_ID}`);
+      const response = [
+        'HTTP/1.1 307 Temporary Redirect',
+        `fly-replay: instance=${targetMachine}`,
+        '',
+        '',
+      ].join('\r\n');
+      socket.write(response);
+      socket.destroy();
+      return;
+    }
+
+    // Proceed with normal WebSocket upgrade
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request);
+    });
+  } catch (e) {
+    console.error('[Relay] Upgrade error:', e);
+    socket.destroy();
+  }
+});
 
 wss.on('connection', (ws: WebSocket) => {
   let sessionId: string | null = null;
@@ -167,13 +206,13 @@ function handleSessionInit(ws: WebSocket, sessionId: string, message: any) {
   };
 
   sessions.set(sessionId, session);
-  console.log(`[Relay] Session created: ${sessionId}`);
+  console.log(`[Relay] Session created: ${sessionId} on machine ${MACHINE_ID}`);
 
-  // Acknowledge session creation
+  // Acknowledge session creation — include machineId for multi-instance routing
   ws.send(JSON.stringify({
     type: 'session_ack',
     sessionId,
-    payload: { created: true },
+    payload: { created: true, machineId: MACHINE_ID },
     timestamp: Date.now()
   }));
 }
@@ -185,9 +224,10 @@ function handleSessionJoin(ws: WebSocket, sessionId: string, message: any) {
   const session = sessions.get(sessionId);
   
   if (!session) {
+    console.log(`[Relay] Session not found: ${sessionId} (machine: ${MACHINE_ID}, active sessions: ${sessions.size})`);
     ws.send(JSON.stringify({ 
       type: 'error', 
-      payload: { message: 'Session not found' } 
+      payload: { message: 'Session not found', machineId: MACHINE_ID } 
     }));
     return;
   }
