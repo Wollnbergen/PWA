@@ -38,6 +38,9 @@
   flex: 1;
   padding: var(--spacing-md);
   overflow-y: auto;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .loading-state,

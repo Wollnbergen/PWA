@@ -198,7 +198,7 @@ export default function Activity() {
             const amount = SultanWallet.formatSLTN(tx.amount);
             
             return (
-              <div key={tx.hash} className="tx-item">
+              <div key={tx.hash} className="tx-item slide-in" style={{ animationDelay: `${(filteredTransactions.indexOf(tx) % 10) * 50}ms` }}>
                 <div className={`tx-icon ${isSent ? 'sent' : 'received'}`}>
                   {isSent ? <ArrowUpIcon /> : <ArrowDownIcon />}
                 </div>

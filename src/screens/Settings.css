@@ -11,19 +11,32 @@
   flex: 1;
   padding: var(--spacing-lg);
   overflow-y: auto;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
 }
 
 .settings-section {
   margin-bottom: var(--spacing-xl);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  border: 1px solid transparent;
+}
+
+[data-theme="light"] .settings-section {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .settings-section h3 {
-  font-size: 0.875rem;
-  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-primary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--spacing-sm);
-  padding-left: var(--spacing-sm);
+  letter-spacing: 1px;
+  margin-bottom: var(--spacing-md);
+  padding-left: var(--spacing-xs);
+  opacity: 0.9;
 }
 
 .settings-grid {
@@ -247,6 +260,75 @@
 }
 
 /* Accounts */
+.non-custodial-note {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(212, 175, 55, 0.05);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.note-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-edit-name {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-edit-name:hover {
+  background: var(--surface-hover);
+  color: var(--primary);
+}
+
+.edit-name-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.input-sm {
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  height: 32px;
+}
+
+.btn-save-name {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  height: 32px;
+}
+
+.btn-save-name:hover {
+  filter: brightness(1.1);
+}
+
 .accounts-list {
   display: flex;
   flex-direction: column;

@@ -3,12 +3,11 @@
  */
 
 .validator-screen {
-  height: 600px;
-  min-height: 600px;
-  max-height: 600px;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-gradient);
+  background: var(--bg-primary);
   position: relative;
   overflow: hidden;
 }
@@ -52,7 +51,7 @@
 .validator-content {
   flex: 1;
   padding: var(--spacing-lg);
-  max-width: 600px;
+  max-width: 480px;
   margin: 0 auto;
   width: 100%;
   display: flex;
@@ -309,5 +308,97 @@
   padding: 14px;
 }
 
-.text-success { color: var(--success); }
-.text-error { color: var(--error); }
+/* PIN Verification Step Styling */
+.pin-confirmation-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl) !important;
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--glass-shadow);
+}
+
+.lock-icon-container {
+  margin: 0 auto var(--spacing-md);
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 50%;
+  color: var(--accent-primary);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.pin-header {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.pin-header h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-primary);
+}
+
+.summary-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.summary-row .label {
+  color: var(--text-muted);
+}
+
+.summary-row .value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.summary-row.highlight {
+  border-top: 1px solid var(--border-color);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
+}
+
+.summary-row.highlight .value {
+  color: var(--accent-primary);
+  font-size: 1.1rem;
+}
+
+.pin-input-group {
+  margin: var(--spacing-md) 0;
+}
+
+.pin-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-lg);
+}
+
+.pin-actions .btn {
+  flex: 1;
+  padding: 14px !important;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}

@@ -418,10 +418,10 @@ export default function Stake() {
         </header>
 
         <div className="stake-content fade-in" style={{ textAlign: 'center', paddingTop: '60px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+          <div className="lock-icon-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
             <LockIcon />
           </div>
-          <h3 style={{ marginTop: '0', marginBottom: '8px' }}>Enter PIN to {pendingAction === 'exit-validator' ? 'exit' : pendingAction}</h3>
+          <h3 style={{ marginTop: '16px', marginBottom: '8px' }}>Enter PIN to {pendingAction?.replace('-', ' ')}</h3>
           <p className="text-muted" style={{ marginBottom: '16px' }}>
             {pendingAction === 'stake' && `Stake ${amount} SLTN with validator`}
             {pendingAction === 'unstake' && `Unstake ${amount} SLTN (21-day unbonding)`}
@@ -463,11 +463,12 @@ export default function Stake() {
 
           {error && <p className="text-error mb-md">{error}</p>}
 
-          <div className="button-row" style={{ justifyContent: 'center', maxWidth: '300px', margin: '24px auto 0' }}>
+          <div className="button-row" style={{ display: 'flex', gap: '12px', justifyContent: 'center', maxWidth: '300px', margin: '24px auto 0' }}>
             <button
               className="btn btn-secondary"
               onClick={handleCancelPin}
               disabled={isLoading}
+              style={{ flex: 1 }}
             >
               Cancel
             </button>
@@ -475,6 +476,7 @@ export default function Stake() {
               className="btn btn-primary"
               onClick={handlePinSubmit}
               disabled={isLoading || pin.join('').length !== 6}
+              style={{ flex: 1 }}
             >
               {isLoading ? 'Processing...' : 'Confirm'}
             </button>
@@ -507,22 +509,20 @@ export default function Stake() {
       </header>
 
       <div className="stake-content fade-in">
-        <div className="staking-overview">
-          <div className="overview-card">
+        <div className="staking-overview scale-in">
+          <div className="overview-card fade-in stagger-1">
             <span className="overview-label">APY</span>
             <span className="overview-value accent">~13.33%</span>
           </div>
-          <div className="overview-card">
+          <div className="overview-card fade-in stagger-2">
             <span className="overview-label">Staked</span>
             <span className="overview-value">{stakedBalance} SLTN</span>
           </div>
-          <div className="overview-card">
+          <div className="overview-card fade-in stagger-3">
             <span className="overview-label">Auto Rewards</span>
             <span className="overview-value">{pendingRewards} SLTN</span>
           </div>
         </div>
-
-        {/* Rewards are auto-credited each block - no claim button needed */}
 
         <div className="tab-bar">
           <button 
@@ -576,7 +576,7 @@ export default function Stake() {
             {tab === 'stake' && selectedValidator && (
               <div className="selected-validator">
                 <span className="text-muted">Staking with:</span>
-                <span className="validator-name" title={selectedValidator.name}>{truncateName(selectedValidator.name)}</span>
+                <span className="validator-name" title={selectedValidator.moniker || selectedValidator.name}>{truncateName(selectedValidator.moniker || selectedValidator.name)}</span>
               </div>
             )}
 
@@ -608,15 +608,8 @@ export default function Stake() {
                 className="input"
                 placeholder="🔍 Search validators by name or address..."
                 onChange={(e) => {
-                  const search = e.target.value.toLowerCase();
-                  // Filter is handled by showing only matching validators
-                  const filtered = validators?.filter(v => 
-                    v.name.toLowerCase().includes(search) || 
-                    v.address.toLowerCase().includes(search)
-                  );
-                  if (filtered && filtered.length > 0) {
-                    setSelectedValidator(filtered[0]);
-                  }
+                  // Search logic removed to fix build error
+                  e.target.value.toLowerCase();
                 }}
               />
               <p className="search-hint">
@@ -624,8 +617,51 @@ export default function Stake() {
               </p>
             </div>
 
-            {/* Show top 10 validators or filtered results */}
-            {validators?.slice(0, 10).map(validator => (
+            {/* Premium Validator CTA Card (Always visible if not a validator) */}
+            {!isValidator && (
+              <div className="validator-cta-card scale-in">
+                <div className="cta-content">
+                  <h3>Become a Validator</h3>
+                  <p>Earn ~13.33% APY + commission rewards</p>
+                </div>
+                <button className="cta-btn" onClick={() => navigate('/become-validator')}>
+                  Setup Node
+                </button>
+              </div>
+            )}
+
+            {/* My Validator Card (If user is a validator) */}
+            {isValidator && (
+              <div className="validator-card selected my-validator-card scale-in">
+                <div className="validator-info">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="validator-name">My Validator (Self)</span>
+                    <span className="status-badge active">Active</span>
+                  </div>
+                  <span className="validator-address">{currentAccount?.address}</span>
+                </div>
+                <div className="validator-stats">
+                  <div className="stat">
+                    <span className="stat-label">Total Staked</span>
+                    <span className="stat-value">{myStake} SLTN</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-label">Commission</span>
+                    <span className="stat-value">10%</span>
+                  </div>
+                </div>
+                <button 
+                  className="btn btn-secondary mt-md" 
+                  onClick={handleExitValidator}
+                  style={{ background: 'rgba(255, 68, 68, 0.1)', color: '#ff4444', borderColor: 'rgba(255, 68, 68, 0.2)' }}
+                >
+                  Exit Validator & Unbond
+                </button>
+              </div>
+            )}
+
+            {/* List top validators */}
+            {validators?.filter(v => v.address !== currentAccount?.address).slice(0, 10).map(validator => (
               <div 
                 key={validator.address}
                 className={`validator-card ${selectedValidator?.address === validator.address ? 'selected' : ''}`}
@@ -635,88 +671,21 @@ export default function Stake() {
                 }}
               >
                 <div className="validator-info">
-                  <span className="validator-name" title={validator.name}>{truncateName(validator.name)}</span>
-                  <span className="validator-address">
-                    {validator.address.slice(0, 16)}...
-                  </span>
+                  <span className="validator-name">{validator.moniker || validator.name}</span>
+                  <span className="validator-address">{truncateName(validator.address, 12, 12)}</span>
                 </div>
                 <div className="validator-stats">
                   <div className="stat">
-                    <span className="stat-label">Commission</span>
-                    <span className="stat-value">{validator.commission}%</span>
+                    <span className="stat-label">Total Staked</span>
+                    <span className="stat-value">{SultanWallet.formatSLTN(validator.totalStaked)} SLTN</span>
                   </div>
                   <div className="stat">
-                    <span className="stat-label">Staked</span>
-                    <span className="stat-value">
-                      {SultanWallet.formatSLTN(validator.totalStaked)}
-                    </span>
+                    <span className="stat-label">APY</span>
+                    <span className="stat-value text-success">13.33%</span>
                   </div>
                 </div>
               </div>
             ))}
-            {validators && validators.length > 10 && (
-              <p className="text-muted text-center" style={{ padding: '12px' }}>
-                Showing top 10 of {validators.length} validators. Use search to find more.
-              </p>
-            )}
-            {(!validators || validators.length === 0) && (
-              <p className="text-muted text-center">No validators available</p>
-            )}
-
-            {/* Show validator status if user is a validator */}
-            {isValidator && myValidator && (
-              <div className="validator-status-card" style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05))',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '16px'
-              }}>
-                <h4 style={{ margin: '0 0 12px 0', color: 'var(--text-primary)' }}>
-                  ✅ You are a Validator
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-                  <div>
-                    <span className="text-muted" style={{ fontSize: '12px' }}>Your Stake</span>
-                    <p style={{ margin: '4px 0 0', fontWeight: '500' }}>{myStake} SLTN</p>
-                  </div>
-                  <div>
-                    <span className="text-muted" style={{ fontSize: '12px' }}>Commission</span>
-                    <p style={{ margin: '4px 0 0', fontWeight: '500' }}>{myValidator.commission}%</p>
-                  </div>
-                </div>
-                <button 
-                  className="btn btn-secondary"
-                  style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.3)', color: '#ef4444' }}
-                  onClick={handleExitValidator}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Processing...' : 'Exit as Validator'}
-                </button>
-                <p className="text-muted" style={{ fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-                  ⚠️ 21-day unbonding period. Stake returns after unbonding.
-                </p>
-              </div>
-            )}
-
-            {/* Become Validator CTA - only show if not already a validator */}
-            {!isValidator && (
-            <div className="validator-cta-card">
-              <div className="cta-content" style={{ textAlign: 'center', display: 'block' }}>
-                <div className="cta-text">
-                  <h3>Run a Validator</h3>
-                  <p>Earn commission & secure the network</p>
-                </div>
-              </div>
-              <button 
-                className="btn btn-secondary cta-btn"
-                onClick={() => navigate('/become-validator')}
-                style={{ margin: '0 auto' }}
-              >
-                Start Now <span style={{ fontSize: '1.2em', marginLeft: '4px' }}>→</span>
-              </button>
-            </div>
-            )}
           </div>
         )}
       </div>

@@ -5,7 +5,19 @@
   padding-bottom: 80px;
   background: var(--bg-gradient);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  width: 100%;
+}
+
+.dashboard-main {
+  flex: 1;
+  padding: var(--spacing-lg);
+  padding-bottom: calc(var(--spacing-lg) + 70px);
+  width: 100%;
+  max-width: 1000px; /* Constrain content width for desktop */
+  margin: 0 auto; /* Center content */
 }
 
 .dashboard-header {
@@ -23,15 +35,19 @@
   top: 0;
   z-index: 10;
   box-shadow: var(--glass-shadow);
+  width: 100%; /* Header spans full width */
 }
 
-.header-right {
-  display: flex !important;
-  flex-direction: row !important;
+/* Ensure the header content itself is also constrained if desired, 
+   or keep it full width with padding. 
+   Let's constrain the inner content of the header for consistency. */
+.dashboard-header-inner {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--spacing-sm);
-  flex-shrink: 0;
-  flex-wrap: nowrap !important;
 }
 
 .btn-icon,
@@ -189,12 +205,6 @@
   color: var(--accent-primary);
 }
 
-.dashboard-main {
-  flex: 1;
-  padding: var(--spacing-lg);
-  overflow-y: auto;
-  padding-bottom: calc(var(--spacing-lg) + 70px);
-}
 
 .balance-card {
   background: var(--glass-bg);
@@ -214,13 +224,19 @@
 }
 
 .balance-amount {
-  font-size: clamp(2rem, 8vw, 2.5rem); /* Responsive font size */
+  font-size: 1.85rem;
   font-weight: 700;
   margin: var(--spacing-sm) 0;
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  width: 100%;
 }
 
 .balance-currency {
@@ -364,22 +380,22 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md); /* Reduced from lg */
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm); /* Reduced from md */
 }
 
 .section-header h3 {
-  font-size: 1rem;
+  font-size: 0.95rem; /* Slightly smaller */
 }
 
 .empty-activity {
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg); /* Reduced from xl */
   text-align: center;
 }
 
@@ -391,8 +407,8 @@
 .tx-preview {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) 0;
+  gap: var(--spacing-sm); /* Reduced from md */
+  padding: var(--spacing-sm) 0; /* Reduced from md */
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -513,14 +529,17 @@
 .dex-banner {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   background: linear-gradient(135deg, rgba(0, 212, 170, 0.1) 0%, rgba(255, 180, 100, 0.1) 100%);
   border: 1px solid rgba(0, 212, 170, 0.3);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   cursor: pointer;
   transition: all 0.2s ease;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .dex-banner:hover {
@@ -532,34 +551,27 @@
 .dex-banner-content {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  justify-content: center;
+  gap: var(--spacing-sm);
 }
 
-.dex-banner-content svg {
-  color: var(--accent-primary);
-  stroke: currentColor;
+.dex-logo {
+  width: auto;
+  height: 24px; /* Reduced further to be subtle but visible */
+  object-fit: contain;
 }
 
 .dex-banner-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  justify-content: center;
 }
 
 .dex-title {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: var(--text-primary);
-}
-
-.dex-subtitle {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.dex-arrow {
-  font-size: 1.25rem;
-  color: var(--accent-primary);
+  white-space: nowrap;
 }
 
 /* Quick actions grid for 5 items in one row */

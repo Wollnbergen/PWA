@@ -35,11 +35,7 @@ const LockIcon = () => (
 
 type UnlockStep = 'pin' | 'totp';
 
-interface UnlockProps {
-  onUnlock?: () => void;
-}
-
-export default function Unlock({ onUnlock }: UnlockProps) {
+export default function Unlock() {
   const navigate = useNavigate();
   const { unlock, lock, error, clearError } = useWallet();
   
@@ -62,15 +58,9 @@ export default function Unlock({ onUnlock }: UnlockProps) {
 
   /**
    * Navigate to appropriate screen after successful unlock
-   * Checks for pending approvals first, or calls onUnlock callback
+   * Checks for pending deep link connection first, then pending approvals
    */
   const navigateAfterUnlock = async () => {
-    // If there's a custom onUnlock handler (e.g., for deep link), call it
-    if (onUnlock) {
-      onUnlock();
-      return;
-    }
-    
     // Check for pending deep link connection
     const pendingConnect = sessionStorage.getItem('sultan_pending_connect');
     if (pendingConnect) {
@@ -135,7 +125,7 @@ export default function Unlock({ onUnlock }: UnlockProps) {
 
   if (isLocked) {
     return (
-      <div className="unlock-screen">
+      <div className="unlock-screen full-screen-overlay">
         <div className="unlock-content fade-in">
           <div className="lock-icon">
             <LockIcon />
@@ -158,7 +148,7 @@ export default function Unlock({ onUnlock }: UnlockProps) {
   // Show TOTP verification step
   if (step === 'totp') {
     return (
-      <div className="unlock-screen">
+      <div className="unlock-screen full-screen-overlay">
         <TOTPVerify 
           onSuccess={handleTOTPSuccess}
           onCancel={handleTOTPCancel}
@@ -168,7 +158,7 @@ export default function Unlock({ onUnlock }: UnlockProps) {
   }
 
   return (
-    <div className="unlock-screen">
+    <div className="unlock-screen full-screen-overlay">
       <div className="unlock-content fade-in">
         <div className="sultan-icon">
           <SultanLogo size={64} isDark={isDark} />

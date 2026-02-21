@@ -225,7 +225,9 @@ export default function Send() {
       
       // Broadcast
       const result = await sultanAPI.broadcastTransaction({
-        ...txData,
+        transaction: {
+          ...txData,
+        },
         signature,
         publicKey: currentAccount.publicKey,
       });

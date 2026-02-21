@@ -6,11 +6,9 @@
  * Supports viewing, sending, and NFT details.
  */
 
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../hooks/useWallet';
 import { useTheme } from '../hooks/useTheme';
-import { sultanAPI } from '../api/sultanAPI';
 import './NFTs.css';
 
 // Premium SVG Icons
@@ -40,21 +38,6 @@ const MoonIcon = () => (
   </svg>
 );
 
-const SendIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13" />
-    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-  </svg>
-);
-
-const ExternalLinkIcon = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-    <polyline points="15 3 21 3 21 9" />
-    <line x1="10" y1="14" x2="21" y2="3" />
-  </svg>
-);
-
 const ImageIcon = () => (
   <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -77,34 +60,10 @@ const LockIcon = () => (
   </svg>
 );
 
-// NFT Interface
-interface NFT {
-  tokenId: string;
-  contractAddress: string;
-  name: string;
-  description?: string;
-  image?: string;
-  attributes?: Array<{ trait_type: string; value: string }>;
-  collection?: string;
-}
-
-interface NFTCollection {
-  address: string;
-  name: string;
-  symbol: string;
-  nfts: NFT[];
-}
-
 export default function NFTs() {
   const navigate = useNavigate();
-  const { currentAccount, lock } = useWallet();
+  const { lock } = useWallet();
   const { theme, setTheme } = useTheme();
-  
-  const [collections, setCollections] = useState<NFTCollection[]>([]);
-  const [selectedNFT, setSelectedNFT] = useState<NFT | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [view] = useState<'grid' | 'list'>('grid');
   
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
@@ -114,157 +73,6 @@ export default function NFTs() {
     lock();
     navigate('/unlock');
   };
-
-  // Fetch user's NFTs
-  useEffect(() => {
-    const fetchNFTs = async () => {
-      if (!currentAccount?.address) return;
-      
-      setIsLoading(true);
-      setError('');
-      
-      try {
-        // Query Sultan's native token factory for user's NFTs
-        const response = await sultanAPI.queryNFTs(currentAccount.address);
-        
-        if (response.collections) {
-          setCollections(response.collections);
-        } else {
-          // Mock data for development - remove in production
-          setCollections([
-            {
-              address: 'sultan1nft...',
-              name: 'Sultan Genesis',
-              symbol: 'SGEN',
-              nfts: [
-                {
-                  tokenId: '1',
-                  contractAddress: 'sultan1nft...',
-                  name: 'Sultan #1',
-                  description: 'The first Sultan NFT ever minted',
-                  image: 'https://placeholder.pics/svg/300/1a1a2e/00d4aa/Sultan%20%231',
-                  collection: 'Sultan Genesis',
-                  attributes: [
-                    { trait_type: 'Rarity', value: 'Legendary' },
-                    { trait_type: 'Power', value: '100' }
-                  ]
-                },
-                {
-                  tokenId: '42',
-                  contractAddress: 'sultan1nft...',
-                  name: 'Sultan #42',
-                  description: 'A rare Sultan NFT',
-                  image: 'https://placeholder.pics/svg/300/1a1a2e/627eea/Sultan%20%2342',
-                  collection: 'Sultan Genesis',
-                  attributes: [
-                    { trait_type: 'Rarity', value: 'Epic' },
-                    { trait_type: 'Power', value: '88' }
-                  ]
-                }
-              ]
-            }
-          ]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch NFTs:', err);
-        // Show empty state instead of error for now
-        setCollections([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchNFTs();
-  }, [currentAccount?.address]);
-
-  const totalNFTs = collections.reduce((sum, col) => sum + col.nfts.length, 0);
-
-  // NFT Detail Modal
-  if (selectedNFT) {
-    return (
-      <div className="nft-screen">
-        <header className="screen-header">
-          <div className="header-left">
-            <button className="btn-back" onClick={() => setSelectedNFT(null)}>
-              <BackIcon />
-            </button>
-          </div>
-          <h2>{selectedNFT.name}</h2>
-          <div className="header-right">
-            <button className="btn-icon theme-toggle" onClick={toggleTheme}>
-              {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-            </button>
-            <button className="btn-icon" onClick={() => navigate('/settings')} title="Settings">
-              <SettingsIcon />
-            </button>
-            <button className="btn-icon" onClick={handleLock} title="Lock Wallet">
-              <LockIcon />
-            </button>
-          </div>
-        </header>
-
-        <div className="nft-detail fade-in">
-          <div className="nft-image-large">
-            {selectedNFT.image ? (
-              <img src={selectedNFT.image} alt={selectedNFT.name} />
-            ) : (
-              <div className="nft-placeholder">
-                <ImageIcon />
-              </div>
-            )}
-          </div>
-
-          <div className="nft-info">
-            <div className="nft-collection-badge">{selectedNFT.collection}</div>
-            <h2>{selectedNFT.name}</h2>
-            {selectedNFT.description && (
-              <p className="nft-description">{selectedNFT.description}</p>
-            )}
-
-            {selectedNFT.attributes && selectedNFT.attributes.length > 0 && (
-              <div className="nft-attributes">
-                <h4>Attributes</h4>
-                <div className="attributes-grid">
-                  {selectedNFT.attributes.map((attr, index) => (
-                    <div key={index} className="attribute-card">
-                      <span className="attr-type">{attr.trait_type}</span>
-                      <span className="attr-value">{attr.value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="nft-meta">
-              <div className="meta-row">
-                <span>Token ID</span>
-                <span className="mono">#{selectedNFT.tokenId}</span>
-              </div>
-              <div className="meta-row">
-                <span>Contract</span>
-                <span className="mono">{selectedNFT.contractAddress.slice(0, 16)}...</span>
-              </div>
-            </div>
-
-            <div className="nft-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigate(`/send?nft=${selectedNFT.tokenId}&contract=${selectedNFT.contractAddress}`)}
-              >
-                <SendIcon /> Send NFT
-              </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => window.open(`https://x.sltn.io/nft/${selectedNFT.contractAddress}/${selectedNFT.tokenId}`, '_blank')}
-              >
-                <ExternalLinkIcon /> View on Explorer
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="nft-screen">
@@ -289,75 +97,16 @@ export default function NFTs() {
       </header>
 
       <div className="nft-content fade-in">
-        {isLoading ? (
-          <div className="nft-loading">
-            <div className="spinner"></div>
-            <p>Loading your NFTs...</p>
+        <div className="nft-empty">
+          <div className="empty-icon">
+            <ImageIcon />
           </div>
-        ) : error ? (
-          <div className="nft-error">
-            <p className="text-error">{error}</p>
-            <button className="btn btn-secondary" onClick={() => window.location.reload()}>
-              Try Again
-            </button>
-          </div>
-        ) : totalNFTs === 0 ? (
-          <div className="nft-empty">
-            <div className="empty-icon">
-              <ImageIcon />
-            </div>
-            <h3>No NFTs Yet</h3>
-            <p className="text-muted">
-              Your NFTs will appear here once you receive or mint them.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="nft-stats">
-              <div className="stat-card">
-                <span className="stat-value">{totalNFTs}</span>
-                <span className="stat-label">Total NFTs</span>
-              </div>
-              <div className="stat-card">
-                <span className="stat-value">{collections.length}</span>
-                <span className="stat-label">Collections</span>
-              </div>
-            </div>
-
-            {collections.map((collection) => (
-              <div key={collection.address} className="nft-collection">
-                <div className="collection-header">
-                  <h3>{collection.name}</h3>
-                  <span className="collection-count">{collection.nfts.length} items</span>
-                </div>
-                
-                <div className={`nft-grid ${view}`}>
-                  {collection.nfts.map((nft) => (
-                    <div 
-                      key={`${nft.contractAddress}-${nft.tokenId}`} 
-                      className="nft-card"
-                      onClick={() => setSelectedNFT(nft)}
-                    >
-                      <div className="nft-image">
-                        {nft.image ? (
-                          <img src={nft.image} alt={nft.name} loading="lazy" />
-                        ) : (
-                          <div className="nft-placeholder">
-                            <ImageIcon />
-                          </div>
-                        )}
-                      </div>
-                      <div className="nft-card-info">
-                        <span className="nft-name">{nft.name}</span>
-                        <span className="nft-id">#{nft.tokenId}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </>
-        )}
+          <h3>NFT Support Coming Soon</h3>
+          <p className="text-muted">
+            The Sultan NFT standard is currently in development. 
+            Check back soon to manage your digital collectibles.
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -73,9 +73,6 @@ type Modal = 'none' | 'backup' | 'delete' | 'accounts' | 'totp';
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { lock, deriveNewAccount, accounts, currentAccount, switchAccount, deleteWalletData } = useWallet();
-  const { theme, setTheme } = useTheme();
-  
   const [modal, setModal] = useState<Modal>('none');
   const [showPinForBackup, setShowPinForBackup] = useState(false);
   const [mnemonic, setMnemonic] = useState('');
@@ -86,6 +83,25 @@ export default function Settings() {
   // Force re-render when 2FA status changes
   const [, setForceUpdate] = useState(0);
   const twoFAEnabled = is2FAEnabled();
+  const { lock, deriveNewAccount, accounts, currentAccount, switchAccount, deleteWalletData, updateAccountName } = useWallet();
+  const { theme, setTheme } = useTheme();
+
+  const [editingAccountIndex, setEditingAccountIndex] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  const handleStartEdit = (e: React.MouseEvent, index: number, currentName: string) => {
+    e.stopPropagation();
+    setEditingAccountIndex(index);
+    setEditingName(currentName);
+  };
+
+  const handleSaveName = async (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    if (editingName.trim()) {
+      updateAccountName(index, editingName.trim());
+    }
+    setEditingAccountIndex(null);
+  };
 
   const handleBackupClick = () => {
     setShowPinForBackup(true);
@@ -147,7 +163,7 @@ export default function Settings() {
       </header>
 
       <div className="settings-content fade-in">
-        <div className="settings-section">
+        <div className="settings-section slide-in stagger-1">
           <h3>Account</h3>
           
           <div className="setting-item" onClick={() => setModal('accounts')}>
@@ -159,7 +175,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section slide-in stagger-2">
           <h3>Preferences & Security</h3>
           
           <div className="settings-grid">
@@ -203,7 +219,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section slide-in stagger-3">
           <h3>Security Details</h3>
           
           <div className="setting-item" onClick={() => navigate('/connected-apps')}>
@@ -251,7 +267,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-section">
+        <div className="settings-section slide-in stagger-4">
           <h3>About</h3>
           
           <div className="setting-item">
@@ -277,7 +293,7 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-section danger-section">
+        <div className="settings-section danger-section slide-in stagger-5">
           <h3>Danger Zone</h3>
           
           <div className="setting-item danger" onClick={() => setModal('delete')}>
@@ -367,7 +383,11 @@ export default function Settings() {
             <h3>Manage Accounts</h3>
             
             <div className="accounts-list">
-              {accounts?.map(account => (
+              <div className="non-custodial-note mb-sm">
+                <span className="note-icon">ℹ️</span>
+                <p>Custom names are saved locally on this device. They will not sync to other devices due to the non-custodial nature of the wallet.</p>
+              </div>
+              {accounts?.map((account, index) => (
                 <div 
                   key={account.address}
                   className={`account-item ${currentAccount?.address === account.address ? 'active' : ''}`}
@@ -377,7 +397,38 @@ export default function Settings() {
                   }}
                 >
                   <div className="account-info">
-                    <span className="account-name">{account.name}</span>
+                    {editingAccountIndex === index ? (
+                      <div className="edit-name-form" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="text"
+                          className="input input-sm"
+                          value={editingName}
+                          onChange={e => setEditingName(e.target.value)}
+                          autoFocus
+                          maxLength={32}
+                        />
+                        <button 
+                          className="btn-save-name"
+                          onClick={(e) => handleSaveName(e, index)}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="name-row">
+                        <span className="account-name">{account.name}</span>
+                        <button 
+                          className="btn-edit-name" 
+                          onClick={(e) => handleStartEdit(e, index, account.name)}
+                          title="Edit name"
+                        >
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                     <span className="account-address">
                       {account.address.slice(0, 16)}...
                     </span>

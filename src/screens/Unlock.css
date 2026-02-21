@@ -1,13 +1,21 @@
 .unlock-screen {
-  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: var(--spacing-lg);
   /* Force dark background for Unlock screen */
-  background: radial-gradient(circle at 50% 50%, #0d1424 0%, #000000 100%);
+  background: var(--bg-gradient) !important;
+  background-attachment: fixed !important;
   color: #ffffff; /* Force white text */
+  z-index: 9999;
 }
 
 .unlock-content {

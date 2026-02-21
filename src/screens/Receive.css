@@ -1,12 +1,12 @@
 .receive-screen {
-  height: 600px;
-  min-height: 600px;
-  max-height: 600px;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: var(--bg-gradient);
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .receive-screen .screen-header {
@@ -53,6 +53,10 @@
   align-items: center;
   overflow-y: auto;
   min-height: 0;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  gap: var(--spacing-lg);
 }
 
 .receive-card {

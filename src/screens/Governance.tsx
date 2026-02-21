@@ -176,9 +176,8 @@ export default function Governance() {
       
       await sultanAPI.vote({
         proposalId: selectedProposal.id,
-        voter: currentAccount.address,
+        address: currentAccount.address,
         option,
-        votingPower: stakingData?.staked || '0',
         signature,
         publicKey: currentAccount.publicKey,
       });
@@ -260,18 +259,16 @@ export default function Governance() {
       const signature = await wallet.signTransaction(txData, currentAccount.index);
       
       const result = await sultanAPI.submitProposal({
-        proposer: currentAccount.address,
+        address: currentAccount.address,
         title: proposalTitle,
         description: proposalDescription,
-        proposalType,
+        type: proposalType,
         deposit: SultanWallet.parseSLTN(deposit.toString()),
         signature,
         publicKey: currentAccount.publicKey,
-        telegramDiscussionUrl: telegramUrl.trim() || undefined,
-        discordDiscussionUrl: discordUrl.trim() || undefined,
       });
 
-      setSubmitSuccess(`Proposal #${result.proposalId} submitted successfully! 2-day discussion period started.`);
+      setSubmitSuccess(`Proposal submitted successfully! Hash: ${result.hash.slice(0, 8)}...`);
       
       // Reset form
       setProposalTitle('');
