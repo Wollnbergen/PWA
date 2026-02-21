@@ -22,13 +22,19 @@
 
 #root {
   width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
+  max-width: 480px !important;
+  height: 100% !important;
+  max-height: none !important;
+  margin: 0 auto !important;
   box-shadow: none !important;
   border: none !important;
 }
 
-body {
+html, body {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
   display: flex !important;
   justify-content: center !important;
   align-items: flex-start !important;

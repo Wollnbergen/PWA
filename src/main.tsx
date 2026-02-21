@@ -7,6 +7,7 @@ import { ThemeProvider } from './hooks/useTheme';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import App from './App';
 import './index.css';
+import './styles/replit-overrides.css';
 import { runSecurityChecks, setupAntiDebugging } from './core/csp';
 
 // Run security checks before initializing the app
