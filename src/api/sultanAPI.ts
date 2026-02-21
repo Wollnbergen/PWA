@@ -643,6 +643,10 @@ interface CreateValidatorRequest {
   commissionRate: number;
   signature: string;
   publicKey: string;
+  /** Server's Ed25519 public key for block signing (from install.sh) */
+  serverPublicKey?: string;
+  /** Wallet address to receive staking rewards (defaults to delegatorAddress) */
+  rewardWallet?: string;
 }
 
 // ============================================================================
@@ -796,6 +800,8 @@ export const sultanAPI = {
       commission_rate: req.commissionRate,
       signature: req.signature,
       public_key: req.publicKey,
+      ...(req.serverPublicKey && { server_public_key: req.serverPublicKey }),
+      ...(req.rewardWallet && { reward_wallet: req.rewardWallet }),
     });
   },
 
