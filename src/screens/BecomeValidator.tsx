@@ -81,6 +81,8 @@ export default function BecomeValidator() {
   const [step, setStep] = useState<Step>('overview');
   // Validator address is the SERVER's address from install.sh output
   const [validatorAddress, setValidatorAddress] = useState('');
+  // Server's Ed25519 public key for block signing (from install.sh output)
+  const [serverPublicKey, setServerPublicKey] = useState('');
   const [moniker, setMoniker] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -234,6 +236,7 @@ export default function BecomeValidator() {
         commission_rate: 0.10, // 10% as decimal (0.10 = 10%)
         nonce: currentNonce,
         timestamp,
+        ...(serverPublicKey.trim() && { server_public_key: serverPublicKey.trim() }),
       };
 
       console.log('[BecomeValidator] Signing transaction with index:', currentAccount.index);
@@ -250,6 +253,8 @@ export default function BecomeValidator() {
         commissionRate: 0.10, // 10% as decimal
         signature,
         publicKey: currentAccount.publicKey,
+        serverPublicKey: serverPublicKey.trim() || undefined,
+        rewardWallet: currentAccount.address, // rewards go to user's wallet
       });
 
       setSuccess(`🎉 Congratulations! You are now a Sultan validator!`);
@@ -400,6 +405,20 @@ curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
               />
               <p className="input-hint" style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                 Copy from server terminal: "Validator Address: sultan1..."
+              </p>
+            </div>
+
+            <div className="input-group">
+              <label>Server Public Key <span style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>(from install output)</span></label>
+              <input 
+                type="text" 
+                className="input" 
+                placeholder="fe3c685fca3f0d6e81af0fa380ed2bf17f92e2a6edd97c776f330477b40da26b"
+                value={serverPublicKey}
+                onChange={(e) => setServerPublicKey(e.target.value)}
+              />
+              <p className="input-hint" style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
+                Copy from server terminal: "Public Key: ..."
               </p>
             </div>
 

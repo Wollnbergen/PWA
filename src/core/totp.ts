@@ -1,11 +1,14 @@
 /**
  * TOTP (Time-based One-Time Password) Implementation
  * 
- * RFC 6238 compliant implementation using Web Crypto API.
- * No external dependencies required.
+ * RFC 6238 compliant implementation using @noble/hashes.
+ * Uses @noble/hashes for HMAC-SHA1 to avoid SubtleCrypto cross-realm issues.
  * 
  * Used for optional 2FA at login (not for transaction signing).
  */
+
+import { hmac } from '@noble/hashes/hmac';
+import { sha1 } from '@noble/hashes/sha1';
 
 // ============================================================================
 // Constants
@@ -98,20 +101,10 @@ export function base32Decode(str: string): Uint8Array {
  * HMAC-SHA1 remains secure for authentication per RFC 2104.
  */
 async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
-  // Create new ArrayBuffers to satisfy TypeScript's strict typing
-  const keyBuffer = new Uint8Array(key).buffer;
-  const msgBuffer = new Uint8Array(message).buffer;
-  
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    keyBuffer,
-    { name: 'HMAC', hash: 'SHA-1' },
-    false,
-    ['sign']
-  );
-  
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgBuffer);
-  return new Uint8Array(signature);
+  // Use @noble/hashes for HMAC-SHA1 — avoids SubtleCrypto cross-realm
+  // ArrayBuffer issues in jsdom/test environments while being equally secure.
+  // SECURITY: HMAC-SHA1 remains secure for authentication per RFC 2104.
+  return hmac(sha1, key, message);
 }
 
 // ============================================================================
