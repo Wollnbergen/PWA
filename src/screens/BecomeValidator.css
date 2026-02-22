@@ -254,17 +254,15 @@
 }
 
 .info-box {
-  background: rgba(0, 212, 170, 0.05);
+  background: transparent;
   padding: var(--spacing-md);
   border-radius: 8px;
-  border-left: 3px solid var(--accent-primary);
   font-size: 0.9rem;
   color: var(--text-secondary);
 }
 
 /* Light mode info box tweak */
 [data-theme="light"] .info-box {
-  background: rgba(0, 153, 170, 0.08);
   color: #4a5568;
 }
 
