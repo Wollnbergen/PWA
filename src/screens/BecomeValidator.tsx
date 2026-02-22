@@ -80,7 +80,7 @@ export default function BecomeValidator() {
   
   const [step, setStep] = useState<Step>('overview');
   // Validator address is the SERVER's address from install.sh output
-  const [validatorAddress, setValidatorAddress] = useState(currentAccount?.address || '');
+  const [validatorAddress, setValidatorAddress] = useState('');
   // Server's Ed25519 public key for block signing (from install.sh output)
   const [serverPublicKey, setServerPublicKey] = useState('');
   const [moniker, setMoniker] = useState('');
