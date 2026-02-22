@@ -76,7 +76,8 @@ export default function BecomeValidator() {
   const navigate = useNavigate();
   const { wallet, currentAccount, lock } = useWallet();
   const { theme, setTheme } = useTheme();
-  const { data: balanceData, refetch: refetchBalance } = useBalance(currentAccount?.address);
+  const { data: balanceData, isLoading: isBalanceLoading, refetch: refetchBalance } = useBalance(currentAccount?.address);
+  const isBalanceLoaded = !!balanceData && !isBalanceLoading;
   
   const [step, setStep] = useState<Step>('overview');
   // Validator address is the SERVER's address from install.sh output
@@ -133,10 +134,17 @@ export default function BecomeValidator() {
       return;
     }
 
+    // Ensure balance is loaded before validating
+    if (!isBalanceLoaded) {
+      setError('Balance still loading. Please wait a moment and try again.');
+      refetchBalance();
+      return;
+    }
+
     const amount = '10000';
     const amountValidation = validateAmount(amount, availableBalanceRaw);
     if (!amountValidation.valid) {
-      setError(amountValidation.error || 'Insufficient balance');
+      setError(`Insufficient balance. You have ${availableBalance} SLTN but need 10,000 SLTN.`);
       return;
     }
 
@@ -434,7 +442,7 @@ export default function BecomeValidator() {
             <button 
               className="btn btn-primary btn-full"
               disabled={!validatorAddress.startsWith('sultan1')} 
-              onClick={() => setStep('fund')}
+              onClick={() => { refetchBalance(); setStep('fund'); }}
             >
               Continue
             </button>
@@ -458,6 +466,12 @@ export default function BecomeValidator() {
               <div className="summary-row">
                 <span>Commission</span>
                 <span>10%</span>
+              </div>
+              <div className="summary-row">
+                <span>Your Balance</span>
+                <span className={hasMinimumStake ? 'text-success' : 'text-error'}>
+                  {isBalanceLoading ? 'Loading...' : `${availableBalance} SLTN`}
+                </span>
               </div>
             </div>
 
