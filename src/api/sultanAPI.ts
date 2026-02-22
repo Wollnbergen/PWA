@@ -621,7 +621,7 @@ export async function claimRewards(
 // ============================================================================
 
 interface StakeRequest {
-  delegatorAddress: string;
+  delegatorAddress?: string;
   validatorAddress: string;
   amount: string;
   signature: string;
@@ -637,7 +637,7 @@ interface UnstakeRequest {
 
 interface CreateValidatorRequest {
   validatorAddress: string;
-  delegatorAddress: string;
+  delegatorAddress?: string;
   moniker: string;
   initialStake: string;
   commissionRate: number;
@@ -746,10 +746,10 @@ export const sultanAPI = {
 
   stake: async (req: StakeRequest): Promise<{ hash: string }> => {
     // Fetch current nonce for proper transaction ordering
-    const balance = await getBalance(req.delegatorAddress);
+    const balance = await getBalance((req.delegatorAddress ?? req.validatorAddress));
     return stakeTokens({
       transaction: {
-        from: req.delegatorAddress,
+        from: (req.delegatorAddress ?? req.validatorAddress),
         to: req.validatorAddress,
         amount: req.amount,
         nonce: balance.nonce,
@@ -794,7 +794,7 @@ export const sultanAPI = {
       status: string;
     }>('/staking/create_validator', 'POST', {
       validator_address: req.validatorAddress,
-      delegator_address: req.delegatorAddress,
+      ...(req.delegatorAddress && { delegator_address: req.delegatorAddress }),
       moniker: req.moniker,
       initial_stake: parseInt(req.initialStake, 10),
       commission_rate: req.commissionRate,
