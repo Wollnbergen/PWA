@@ -438,3 +438,30 @@
     gap: var(--spacing-xl);
   }
 }
+
+/* Desktop / 16:9 landscape — 2×2 feature grid to keep logo visible */
+@media (min-width: 600px) and (max-height: 900px) {
+  .features-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+  }
+
+  .welcome-content {
+    gap: var(--spacing-lg);
+  }
+
+  .logo-container {
+    padding-top: var(--spacing-sm);
+  }
+
+  .logo-container h1 {
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .button-group {
+    margin-top: var(--spacing-sm);
+  }
+}
