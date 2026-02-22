@@ -597,7 +597,7 @@ export default function BecomeValidator() {
               </div>
             </div>
 
-            <p className="text-muted" style={{ fontSize: '0.85rem' }}>Now run <code>sultan-enable-validator</code> on your VPS to start producing blocks.</p>
+            <p className="text-muted" style={{ fontSize: '0.85rem' }}>Your node is already running in validator mode. It will begin producing blocks automatically.</p>
 
             <button 
               className="btn btn-primary btn-full"
