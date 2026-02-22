@@ -366,8 +366,12 @@ export default function BecomeValidator() {
           <div className="step-section">
             <h3>1. Server Setup</h3>
             <p className="text-muted">
-              Get a VPS from <strong>Hetzner</strong>, <strong>DigitalOcean</strong>, <strong>Vultr</strong>, 
-              or similar (~$5/mo, Ubuntu 22.04). Then SSH in and run:
+              Get a VPS from <strong>Vultr</strong>, <strong>DigitalOcean</strong>, <strong>Hetzner</strong>, or similar.
+              Select: <strong>Ubuntu 22.04+</strong>, <strong>1 vCPU</strong>, <strong>2 GB RAM</strong>, <strong>25 GB NVMe</strong>, <strong>2 TB bandwidth</strong> (~$6/mo).
+              Choose a location nearest you for best latency.
+            </p>
+            <p className="text-muted">
+              Find your server's root password (Server Details → Overview), open the console, log in as <strong>root</strong>, and run:
             </p>
             
             <div className="code-block">
