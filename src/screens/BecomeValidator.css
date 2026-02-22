@@ -91,6 +91,12 @@
 .step-item.active .step-bar {
   background: var(--accent-primary);
   box-shadow: 0 0 10px var(--accent-primary);
+  animation: barGlow 0.4s ease-out;
+}
+
+@keyframes barGlow {
+  from { opacity: 0; transform: scaleX(0); }
+  to { opacity: 1; transform: scaleX(1); }
 }
 
 .step-label {
@@ -202,6 +208,12 @@
   padding: var(--spacing-xl);
   border-radius: 20px;
   border: var(--glass-border);
+  animation: stepFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes stepFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .step-section h3 {
@@ -233,9 +245,10 @@
   font-family: monospace;
   color: var(--accent-primary);
   white-space: pre-wrap;
-  word-break: break-all;
+  overflow-wrap: break-word;
   font-size: 0.9rem;
   padding-right: 30px;
+  line-height: 1.5;
 }
 
 /* Scoped to code-block to avoid conflicts with MnemonicDisplay .copy-btn */
@@ -306,6 +319,28 @@
   padding: 14px;
 }
 
+/* Inline spinner for loading buttons */
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Overview section entry */
+.overview-section {
+  animation: stepFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* PIN Verification Step Styling */
 .pin-confirmation-section {
   display: flex;
@@ -343,40 +378,16 @@
   color: var(--text-primary);
 }
 
-.summary-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: var(--spacing-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  margin-bottom: var(--spacing-lg);
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.95rem;
-}
-
-.summary-row .label {
+.pin-confirmation-section .summary-row .label {
   color: var(--text-muted);
 }
 
-.summary-row .value {
+.pin-confirmation-section .summary-row .value {
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.summary-row.highlight {
-  border-top: 1px solid var(--border-color);
-  margin-top: var(--spacing-xs);
-  padding-top: var(--spacing-sm);
-}
-
-.summary-row.highlight .value {
+.pin-confirmation-section .summary-row.highlight .value {
   color: var(--accent-primary);
   font-size: 1.1rem;
 }

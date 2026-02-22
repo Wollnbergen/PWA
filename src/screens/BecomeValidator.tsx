@@ -371,9 +371,7 @@ export default function BecomeValidator() {
             </p>
             
             <div className="code-block">
-              <pre>
-curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
-              </pre>
+              <pre>curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh</pre>
               <button className="copy-btn" onClick={() => handleCopyCommand('curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh')}>
                 {copied ? <CheckIcon /> : <CopyIcon />}
               </button>
@@ -467,7 +465,7 @@ curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
               disabled={isLoading}
               onClick={handleFundValidator}
             >
-              {isLoading ? 'Processing...' : 'Register & Stake'}
+              {isLoading ? <><span className="btn-spinner" />Processing...</> : 'Register & Stake'}
             </button>
           </div>
         )}
@@ -533,7 +531,7 @@ curl -L https://wallet.sltn.io/install.sh -o install.sh && bash install.sh
                 onClick={handlePinSubmit}
                 disabled={isLoading || pin.some(d => !d)}
               >
-                {isLoading ? 'Registering...' : 'Confirm Registration'}
+                {isLoading ? <><span className="btn-spinner" />Registering...</> : 'Confirm Registration'}
               </button>
             </div>
           </div>
