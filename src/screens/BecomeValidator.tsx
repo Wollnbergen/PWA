@@ -214,7 +214,7 @@ export default function BecomeValidator() {
 
   /**
    * Execute create validator after PIN verification
-   * In v0.2.7: validator address = user's own wallet address
+   * Two-step: 1) Transfer stake to validator address, 2) Register validator
    */
   const executeFundValidator = async () => {
     if (!wallet || !currentAccount) {
@@ -225,44 +225,63 @@ export default function BecomeValidator() {
 
     try {
       console.log('[BecomeValidator] Starting registration for:', currentAccount.address);
-      // Fixed 10,000 SLTN stake for validator
       const stakeAmount = '10000';
       const atomicAmount = SultanWallet.parseSLTN(stakeAmount);
       const monikerValue = moniker.trim() || 'Sultan Validator';
-      
-      // Fetch current nonce from blockchain BEFORE signing
-      const currentNonce = await sultanAPI.getNonce(currentAccount.address);
+
+      // Step 1: Transfer 10,000 SLTN to validator address (funds the on-chain stake)
+      console.log('[BecomeValidator] Step 1: Transferring stake to validator address');
+      const transferNonce = await sultanAPI.getNonce(currentAccount.address);
+      const transferTxData = {
+        from: currentAccount.address,
+        to: validatorAddress.trim(),
+        amount: atomicAmount,
+        memo: 'Validator stake funding',
+        nonce: transferNonce,
+        timestamp: Date.now(),
+      };
+      const transferSig = await wallet.signTransaction(transferTxData, currentAccount.index);
+      await sultanAPI.broadcastTransaction({
+        ...transferTxData,
+        signature: transferSig,
+        publicKey: currentAccount.publicKey,
+      });
+      console.log('[BecomeValidator] Stake transfer broadcast, waiting for settlement...');
+
+      // Brief wait for the transfer to settle on-chain
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Step 2: Register validator (validator address now has balance)
+      console.log('[BecomeValidator] Step 2: Registering validator');
+      const regNonce = await sultanAPI.getNonce(currentAccount.address);
       const timestamp = Date.now();
       
-      // For create_validator, the validator_address is the server address; delegator = user's wallet
       const txData = {
         type: 'create_validator',
         validator_address: validatorAddress.trim(),
         delegator_address: currentAccount.address,
         moniker: monikerValue,
         initial_stake: atomicAmount,
-        commission_rate: 0.10, // 10% as decimal (0.10 = 10%)
-        nonce: currentNonce,
+        commission_rate: 0.10,
+        nonce: regNonce,
         timestamp,
         ...(serverPublicKey.trim() && { server_public_key: serverPublicKey.trim() }),
       };
 
-      console.log('[BecomeValidator] Signing transaction with index:', currentAccount.index);
+      console.log('[BecomeValidator] Signing create_validator with index:', currentAccount.index);
       const signature = await wallet.signTransaction(txData, currentAccount.index);
-      console.log('[BecomeValidator] Signature obtained, calling createValidator API');
       console.log('[BecomeValidator] PublicKey:', currentAccount.publicKey);
       
-      // Call create_validator API endpoint
       await sultanAPI.createValidator({
         validatorAddress: validatorAddress.trim(),
         delegatorAddress: currentAccount.address,
         moniker: monikerValue,
         initialStake: atomicAmount,
-        commissionRate: 0.10, // 10% as decimal
+        commissionRate: 0.10,
         signature,
         publicKey: currentAccount.publicKey,
         serverPublicKey: serverPublicKey.trim() || undefined,
-        rewardWallet: currentAccount.address, // rewards go to user's wallet
+        rewardWallet: currentAccount.address,
       });
 
       setSuccess(`🎉 Congratulations! You are now a Sultan validator!`);
